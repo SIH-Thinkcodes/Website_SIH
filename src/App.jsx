@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { supabase, authAPI } from './utils/supabase'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
@@ -6,71 +7,35 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 import PoliceDashboard from './pages/dashboard/PoliceDashboard'
 
-function App() {
+// Main App Component that uses AuthContext
+function AppContent() {
+  const { user, profile, loading, login, signup, logout } = useAuth()
   const [currentPage, setCurrentPage] = useState('login')
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [pendingOfficers, setPendingOfficers] = useState([])
-  const [activeOfficers, setActiveOfficers] = useState([]) // Add this state
+  const [activeOfficers, setActiveOfficers] = useState([])
 
+  // Load officers when admin profile is available
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null)
-      if (session?.user) {
-        loadProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user || null)
-        if (session?.user) {
-          await loadProfile(session.user.id)
-        } else {
-          setProfile(null)
-          setCurrentPage('login')
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    // Load all officers for admin
     if (profile?.role === 'admin') {
       loadAllOfficers()
     }
   }, [profile])
 
-  const loadProfile = async (userId) => {
-    try {
-      const profileData = await authAPI.getProfile(userId)
-      setProfile(profileData)
-      
-      // Set current page based on role
-      if (profileData.role === 'admin') {
+  // Set current page based on user role
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.role === 'admin') {
         setCurrentPage('admin-dashboard')
-      } else if (profileData.role === 'police') {
+      } else if (profile.role === 'police') {
         setCurrentPage('police-dashboard')
       }
-    } catch (error) {
-      console.error('Error loading profile:', error)
-    } finally {
-      setLoading(false)
+    } else {
+      setCurrentPage('login')
     }
-  }
+  }, [user, profile])
 
-  // Updated function to load both pending and active officers
   const loadAllOfficers = async () => {
     try {
-      // Fetch all police officers
       const { data: allOfficers, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -79,9 +44,8 @@ function App() {
 
       if (error) throw error
 
-      // Separate pending and active officers
-      const pending = allOfficers.filter(officer => !officer.is_verified)
-      const active = allOfficers.filter(officer => officer.is_verified)
+      const pending = allOfficers?.filter(officer => !officer.is_verified) || []
+      const active = allOfficers?.filter(officer => officer.is_verified) || []
 
       setPendingOfficers(pending)
       setActiveOfficers(active)
@@ -92,31 +56,20 @@ function App() {
     }
   }
 
-  // Keep the old function for backward compatibility (if used elsewhere)
-  const loadPendingOfficers = async () => {
-    try {
-      const officers = await authAPI.getPendingOfficers()
-      setPendingOfficers(officers)
-    } catch (error) {
-      console.error('Error loading pending officers:', error)
-    }
-  }
-
   const handleLogin = async (email, password) => {
     try {
-      await authAPI.signIn(email, password)
-      // Auth state change will be handled by the listener
+      await login(email, password)
     } catch (error) {
-      throw error // Re-throw to let Login component handle the error display
+      throw error
     }
   }
 
   const handleSignup = async (email, password, userData) => {
     try {
-      await authAPI.signUp(email, password, userData)
+      await signup(email, password, userData)
       setCurrentPage('login')
     } catch (error) {
-      throw error // Re-throw to let Signup component handle the error display
+      throw error
     }
   }
 
@@ -129,9 +82,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await authAPI.signOut()
-      setUser(null)
-      setProfile(null)
+      await logout()
       setCurrentPage('login')
     } catch (error) {
       console.error('Error logging out:', error)
@@ -141,11 +92,9 @@ function App() {
   const handleApproveOfficer = async (officerId) => {
     try {
       await authAPI.verifyOfficer(officerId)
-      // Reload all officers list to update both pending and active
       await loadAllOfficers()
     } catch (error) {
       console.error('Error approving officer:', error)
-      // You might want to show an error message to the user here
     }
   }
 
@@ -174,7 +123,7 @@ function App() {
           onLogout={handleLogout}
           onApproveOfficer={handleApproveOfficer}
           pendingOfficers={pendingOfficers}
-          activeOfficers={activeOfficers} // Add this prop
+          activeOfficers={activeOfficers}
         />
       )
     } else if (profile.role === 'police') {
@@ -213,6 +162,15 @@ function App() {
         />
       )
   }
+}
+
+// Main App wrapper with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
 }
 
 export default App

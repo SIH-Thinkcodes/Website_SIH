@@ -162,10 +162,10 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, pendingOfficers, 
                 </div>
               )
             ) : (
-              // Active Officers Section
-              verifiedPoliceOfficers && verifiedPoliceOfficers.length > 0 ? (
+              // Active Officers Section - FIXED: Using activeOfficers instead of verifiedPoliceOfficers
+              activeOfficers && activeOfficers.length > 0 ? (
                 <div className="space-y-4">
-                  {verifiedPoliceOfficers.map((officer) => (
+                  {activeOfficers.map((officer) => (
                     <div key={officer.id} className="bg-slate-50 rounded-lg p-4 flex justify-between items-center">
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 flex-1">
                         <div>
@@ -174,11 +174,11 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, pendingOfficers, 
                         </div>
                         <div>
                           <p className="text-sm text-slate-600">Badge Number</p>
-                          <p className="font-medium text-slate-800">{officer.badge_number}</p>
+                          <p className="font-medium text-slate-800">{officer.badge_number || 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-sm text-slate-600">Station</p>
-                          <p className="font-medium text-slate-800">{officer.station}</p>
+                          <p className="font-medium text-slate-800">{officer.station || 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-sm text-slate-600">Mobile</p>

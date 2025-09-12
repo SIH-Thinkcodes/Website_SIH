@@ -3,7 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+console.log('Supabase Config:', { supabaseUrl, supabaseKey: supabaseKey ? 'Present' : 'Missing' })
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+})
 
 // Auth helpers
 export const authAPI = {
@@ -131,12 +139,21 @@ export const authAPI = {
   // Sign in
   signIn: async (email, password) => {
     try {
+      console.log('Attempting to sign in with email:', email)
+      
+      // Clear any existing session first
+      await supabase.auth.signOut({ scope: 'local' })
+      
+      // Small delay to ensure cleanup
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       
       if (error) {
+        console.error('Sign in error:', error)
         if (error.message.includes('Invalid login credentials')) {
           throw new Error('Invalid email or password')
         }
@@ -149,6 +166,7 @@ export const authAPI = {
         throw error
       }
       
+      console.log('Sign in successful:', data.user?.id)
       return data
     } catch (error) {
       console.error('Login error:', error)
@@ -158,32 +176,79 @@ export const authAPI = {
 
   // Sign out
   signOut: async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Logout error:', error)
+    try {
+      console.log('Signing out from Supabase...')
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) {
+        console.error('Logout error:', error)
+        throw error
+      }
+      console.log('Supabase signout successful')
+    } catch (error) {
+      console.error('Signout error:', error)
       throw error
     }
   },
 
-  // Get current user profile
+  // Get current user profile - WITH DETAILED DEBUG LOGGING
   getProfile: async (userId) => {
+    console.log('=== STARTING PROFILE FETCH DEBUG ===')
+    console.log('1. Fetching profile for user:', userId)
+    
     try {
+      // First, let's check if the table exists and has data
+      console.log('2. Checking if table has any data...')
+      const { data: allProfiles, error: countError } = await supabase
+        .from('user_profiles')
+        .select('id, email, name, role')
+        .limit(5)
+      
+      console.log('3. Sample profiles in table:', allProfiles)
+      if (countError) {
+        console.error('4. Error checking table:', countError)
+      }
+      
+      // Now try to get the specific profile
+      console.log('5. Attempting to fetch specific profile...')
+      const startTime = Date.now()
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single()
       
+      const endTime = Date.now()
+      console.log(`6. Query completed in ${endTime - startTime}ms`)
+      console.log('7. Query result - data:', data)
+      console.log('8. Query result - error:', error)
+      
       if (error) {
+        console.error('9. Profile fetch error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
+        
         if (error.code === 'PGRST116') {
           throw new Error('User profile not found')
         }
         throw error
       }
       
+      if (!data) {
+        console.error('10. No data returned but no error either')
+        throw new Error('Profile not found - no data returned')
+      }
+      
+      console.log('11. Profile fetched successfully:', data)
+      console.log('=== PROFILE FETCH DEBUG COMPLETE ===')
       return data
     } catch (error) {
-      console.error('Profile fetch error:', error)
+      console.error('=== PROFILE FETCH ERROR ===')
+      console.error('Error details:', error)
+      console.error('Error stack:', error.stack)
       throw error
     }
   },

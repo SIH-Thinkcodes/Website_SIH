@@ -20,6 +20,8 @@ export const AuthProvider = ({ children }) => {
   const authListenerRef = useRef(null)
   const isLoggingOutRef = useRef(false)
   const profileFetchAttempts = useRef(0)
+  const currentUserIdRef = useRef(null) // Track current user ID to prevent duplicates
+  const isLoadingProfileRef = useRef(false) // Prevent concurrent profile loads
 
   useEffect(() => {
     initializeAuth()
@@ -49,6 +51,8 @@ export const AuthProvider = ({ children }) => {
               setProfile(null)
               setProfileError(null)
               profileFetchAttempts.current = 0
+              currentUserIdRef.current = null
+              isLoadingProfileRef.current = false
               setLoading(false)
               return
             }
@@ -58,19 +62,29 @@ export const AuthProvider = ({ children }) => {
               return
             }
             
-            // Prevent multiple profile fetches for the same user
-            if (session?.user && session.user.id !== user?.id) {
-              console.log('New user signed in:', session.user.id)
-              setUser(session.user)
-              profileFetchAttempts.current = 0
-              await loadProfile(session.user.id)
-            } else if (!session?.user && !isLoggingOutRef.current) {
+            // Handle user sign in - prevent duplicate profile fetches
+            if (session?.user) {
+              const newUserId = session.user.id
+              
+              // Only process if it's a genuinely new user or we don't have a profile yet
+              if (newUserId !== currentUserIdRef.current) {
+                console.log('New user signed in:', newUserId)
+                currentUserIdRef.current = newUserId
+                setUser(session.user)
+                profileFetchAttempts.current = 0
+                await loadProfile(newUserId)
+              } else {
+                console.log('Same user, skipping profile fetch')
+              }
+            } else if (!isLoggingOutRef.current) {
               // Only clear state if we're not in the middle of a logout
               console.log('No session, clearing state')
               setUser(null)
               setProfile(null)
               setProfileError(null)
               profileFetchAttempts.current = 0
+              currentUserIdRef.current = null
+              isLoadingProfileRef.current = false
               setLoading(false)
             }
           }
@@ -91,6 +105,7 @@ export const AuthProvider = ({ children }) => {
 
       if (session?.user) {
         console.log('Found existing session:', session.user.id)
+        currentUserIdRef.current = session.user.id
         setUser(session.user)
         await loadProfile(session.user.id)
       } else {
@@ -109,8 +124,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   const loadProfile = async (userId, isRetry = false) => {
-    if (!userId) {
-      setLoading(false)
+    if (!userId || isLoadingProfileRef.current) {
+      console.log('Skipping profile fetch - no userId or already loading')
+      if (!userId) setLoading(false)
       return
     }
     
@@ -122,6 +138,7 @@ export const AuthProvider = ({ children }) => {
       return
     }
     
+    isLoadingProfileRef.current = true
     profileFetchAttempts.current++
     
     try {
@@ -141,6 +158,7 @@ export const AuthProvider = ({ children }) => {
       setProfile(profileData)
       profileFetchAttempts.current = 0 // Reset on success
       console.log('Profile loaded successfully:', profileData.role)
+      setLoading(false)
     } catch (error) {
       console.error('Error loading profile:', error)
       
@@ -150,6 +168,7 @@ export const AuthProvider = ({ children }) => {
         // Retry once more with shorter timeout
         if (profileFetchAttempts.current < 3) {
           console.log('Retrying profile fetch...')
+          isLoadingProfileRef.current = false // Reset flag before retry
           setTimeout(() => loadProfile(userId, true), 1000)
           return // Don't set loading to false yet
         }
@@ -157,10 +176,11 @@ export const AuthProvider = ({ children }) => {
       
       setProfile(null)
       setProfileError(error.message)
+      setLoading(false)
     } finally {
-      // Only set loading to false if we're done trying
-      if (profileFetchAttempts.current >= 3 || profile !== null) {
-        setLoading(false)
+      // Only reset the loading flag if we're not retrying
+      if (profileFetchAttempts.current >= 3 || profile !== null || error?.message !== 'Profile fetch timeout') {
+        isLoadingProfileRef.current = false
       }
     }
   }
@@ -175,6 +195,8 @@ export const AuthProvider = ({ children }) => {
       setProfile(null)
       setProfileError(null)
       profileFetchAttempts.current = 0
+      currentUserIdRef.current = null
+      isLoadingProfileRef.current = false
       
       const data = await authAPI.signIn(email, password)
       console.log('Login successful:', data.user?.id)
@@ -214,6 +236,8 @@ export const AuthProvider = ({ children }) => {
       setProfile(null)
       setProfileError(null)
       profileFetchAttempts.current = 0
+      currentUserIdRef.current = null
+      isLoadingProfileRef.current = false
       setLoading(false)
       
       // Try to sign out from Supabase
@@ -236,7 +260,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   const retryProfileFetch = () => {
-    if (user?.id) {
+    if (user?.id && !isLoadingProfileRef.current) {
       profileFetchAttempts.current = 0
       setLoading(true)
       loadProfile(user.id)

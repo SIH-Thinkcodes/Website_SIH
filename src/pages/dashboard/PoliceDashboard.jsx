@@ -86,31 +86,31 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <header className="bg-white/85 backdrop-blur-lg shadow-sm border-b border-blue-100 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
-                <Shield className="text-white w-6 h-6" />
+              <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
+                <Shield className="text-white w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">Police Officer Portal</h1>
-                <p className="text-sm text-slate-600">Officer Dashboard</p>
+                <h1 className="text-lg font-bold text-slate-800">Police Officer Portal</h1>
+                <p className="text-xs text-slate-600">Officer Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="font-semibold text-slate-800">{profile?.name}</p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                <p className="font-semibold text-slate-800 text-sm">{profile?.name}</p>
+                <div className="flex items-center justify-end">
+                  <div className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-medium">
                     Pending Verification
                   </div>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100"
+                className="bg-red-50 text-red-600 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -168,29 +168,29 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Sticky Header with Blur */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      {/* Compact Sticky Header with Enhanced Blur */}
+      <header className="bg-white/90 backdrop-blur-xl shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+              className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100/70 transition-colors"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
-            <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
-              <Shield className="text-white w-6 h-6" />
+            <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
+              <Shield className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Police Officer Portal</h1>
-              <p className="text-sm text-slate-600">Officer Dashboard</p>
+              <h1 className="text-lg font-bold text-slate-800">Police Officer Portal</h1>
+              <p className="text-xs text-slate-600 leading-tight">Officer Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="text-right">
-              <p className="font-semibold text-slate-800">{profile?.name}</p>
-              <div className="flex items-center space-x-2">
-                <div className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+              <p className="font-semibold text-slate-800 text-sm">{profile?.name}</p>
+              <div className="flex items-center justify-end">
+                <div className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
                   <CheckCircle className="w-3 h-3 mr-1" />
                   Verified Officer
                 </div>
@@ -198,30 +198,30 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
             </div>
             <button
               onClick={onLogout}
-              className="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100"
+              className="bg-red-50 text-red-600 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Navigation Bar */}
-        <nav className="border-t border-slate-100">
+        {/* Compact Navigation Bar */}
+        <nav className="border-t border-slate-100/50">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex space-x-1 overflow-x-auto py-2">
+            <div className="flex space-x-1 overflow-x-auto py-1.5 scrollbar-hide">
               {navigationItems.map((item) => {
                 const Icon = item.icon
                 return (
                   <button
                     key={item.id}
                     onClick={() => setCurrentPage(item.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                       currentPage === item.id
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-blue-100/80 text-blue-700 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/70'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="hidden sm:block">{item.name}</span>
                   </button>
                 )
@@ -231,24 +231,24 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
         </nav>
       </header>
 
-      {/* Mobile Sidebar */}
+      {/* Enhanced Mobile Sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-64 bg-white shadow-lg">
-            <div className="p-4 border-b">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-64 bg-white/95 backdrop-blur-xl shadow-xl border-r border-slate-200">
+            <div className="p-4 border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-slate-800">Navigation</h2>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-1 rounded hover:bg-slate-100"
+                  className="p-1 rounded hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
             <nav className="p-4">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {navigationItems.map((item) => {
                   const Icon = item.icon
                   return (
@@ -258,13 +258,13 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
                         setCurrentPage(item.id)
                         setSidebarOpen(false)
                       }}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
                         currentPage === item.id
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-blue-100 text-blue-700 shadow-sm'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-5 h-5 flex-shrink-0" />
                       <span>{item.name}</span>
                     </button>
                   )
@@ -279,6 +279,16 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {renderPage()}
       </main>
+
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   )
 }

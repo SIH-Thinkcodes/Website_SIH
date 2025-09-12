@@ -45,7 +45,7 @@ export const authAPI = {
       // Wait for the trigger to complete
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      // Check the automatically created profile
+      // Check the automatically created profile (no RLS, so this should work)
       const { data: autoCreatedProfile, error: checkError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -93,8 +93,32 @@ export const authAPI = {
           console.log('Auto-created profile is already correct, no update needed')
         }
       } else {
-        console.log('No auto-created profile found, this is unexpected with triggers')
-        throw new Error('Profile creation failed - no profile was created by trigger')
+        console.log('No auto-created profile found, trying manual insert...')
+        // Fallback: try to manually insert the profile
+        const profileData = {
+          id: authData.user.id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          mobile_number: userData.mobile_number || null,
+          badge_number: userData.badge_number || null,
+          station: userData.station || null,
+          official_id_type: userData.official_id_type || null,
+          official_id_image_url: userData.official_id_image_url || null,
+          is_verified: userData.is_verified || false
+        }
+
+        const { data: insertedProfile, error: insertError } = await supabase
+          .from('user_profiles')
+          .insert([profileData])
+          .select()
+
+        if (insertError) {
+          console.error('Manual profile insert failed:', insertError)
+          throw new Error('Failed to create user profile manually: ' + insertError.message)
+        }
+        
+        console.log('Profile created manually:', insertedProfile)
       }
       
       return authData

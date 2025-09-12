@@ -12,6 +12,7 @@ function App() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [pendingOfficers, setPendingOfficers] = useState([])
+  const [activeOfficers, setActiveOfficers] = useState([]) // Add this state
 
   useEffect(() => {
     // Get initial session
@@ -42,9 +43,9 @@ function App() {
   }, [])
 
   useEffect(() => {
-    // Load pending officers for admin
+    // Load all officers for admin
     if (profile?.role === 'admin') {
-      loadPendingOfficers()
+      loadAllOfficers()
     }
   }, [profile])
 
@@ -66,6 +67,32 @@ function App() {
     }
   }
 
+  // Updated function to load both pending and active officers
+  const loadAllOfficers = async () => {
+    try {
+      // Fetch all police officers
+      const { data: allOfficers, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('role', 'police')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Separate pending and active officers
+      const pending = allOfficers.filter(officer => !officer.is_verified)
+      const active = allOfficers.filter(officer => officer.is_verified)
+
+      setPendingOfficers(pending)
+      setActiveOfficers(active)
+
+      console.log('Loaded officers:', { pending: pending.length, active: active.length })
+    } catch (error) {
+      console.error('Error loading officers:', error)
+    }
+  }
+
+  // Keep the old function for backward compatibility (if used elsewhere)
   const loadPendingOfficers = async () => {
     try {
       const officers = await authAPI.getPendingOfficers()
@@ -114,8 +141,8 @@ function App() {
   const handleApproveOfficer = async (officerId) => {
     try {
       await authAPI.verifyOfficer(officerId)
-      // Reload pending officers list
-      await loadPendingOfficers()
+      // Reload all officers list to update both pending and active
+      await loadAllOfficers()
     } catch (error) {
       console.error('Error approving officer:', error)
       // You might want to show an error message to the user here
@@ -147,6 +174,7 @@ function App() {
           onLogout={handleLogout}
           onApproveOfficer={handleApproveOfficer}
           pendingOfficers={pendingOfficers}
+          activeOfficers={activeOfficers} // Add this prop
         />
       )
     } else if (profile.role === 'police') {

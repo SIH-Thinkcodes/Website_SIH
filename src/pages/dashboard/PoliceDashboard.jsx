@@ -1,11 +1,92 @@
-import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock } from 'lucide-react'
+import { useState } from 'react'
+import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X } from 'lucide-react'
+
+// Import page components
+import TouristSearch from './TouristSearch'
+import EmergencyDispatch from './EmergencyDispatch'
+import FIRGenerator from './FIRGenerator'
+import CitizenChat from './CitizenChat'
+import MissingPersons from './MissingPersons'
 
 const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
+  const [currentPage, setCurrentPage] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const navigationItems = [
+    { id: 'dashboard', name: 'Dashboard', icon: Shield },
+    { id: 'tourist-search', name: 'Tourist Search', icon: Search },
+    { id: 'emergency-dispatch', name: 'Emergency Dispatch', icon: Phone },
+    { id: 'fir-generator', name: 'E-FIR Generator', icon: FileText },
+    { id: 'citizen-chat', name: 'Citizen Support Chat', icon: MessageCircle },
+    { id: 'missing-persons', name: 'Missing Persons Registry', icon: Users },
+  ]
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'tourist-search':
+        return <TouristSearch />
+      case 'emergency-dispatch':
+        return <EmergencyDispatch />
+      case 'fir-generator':
+        return <FIRGenerator />
+      case 'citizen-chat':
+        return <CitizenChat />
+      case 'missing-persons':
+        return <MissingPersons />
+      default:
+        return <DashboardHome />
+    }
+  }
+
+  const DashboardHome = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats Cards */}
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">Active Cases</p>
+            <p className="text-2xl font-bold text-blue-600">0</p>
+          </div>
+          <Shield className="text-blue-500 w-8 h-8" />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">Reports Filed</p>
+            <p className="text-2xl font-bold text-green-600">0</p>
+          </div>
+          <CheckCircle className="text-green-500 w-8 h-8" />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-slate-600">Pending Tasks</p>
+            <p className="text-2xl font-bold text-orange-600">0</p>
+          </div>
+          <AlertCircle className="text-orange-500 w-8 h-8" />
+        </div>
+      </div>
+
+      {/* Welcome Card */}
+      <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-blue-100 p-6">
+        <h2 className="text-lg font-bold text-slate-800 mb-4">Welcome to Police Portal</h2>
+        <p className="text-slate-600">
+          Your account has been verified and you now have full access to all police portal features.
+          Use the navigation menu to access case management, reports, and other tools.
+        </p>
+      </div>
+    </div>
+  )
+
   if (!isVerified) {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-blue-100">
+        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
@@ -87,10 +168,16 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-blue-100">
+      {/* Sticky Header with Blur */}
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
               <Shield className="text-white w-6 h-6" />
             </div>
@@ -117,51 +204,80 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
             </button>
           </div>
         </div>
+
+        {/* Navigation Bar */}
+        <nav className="border-t border-slate-100">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex space-x-1 overflow-x-auto py-2">
+              {navigationItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentPage(item.id)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      currentPage === item.id
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:block">{item.name}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </nav>
       </header>
 
-      {/* Main Content - Verified Officer Dashboard */}
+      {/* Mobile Sidebar */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-64 bg-white shadow-lg">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-slate-800">Navigation</h2>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-1 rounded hover:bg-slate-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <nav className="p-4">
+              <div className="space-y-2">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentPage(item.id)
+                        setSidebarOpen(false)
+                      }}
+                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                        currentPage === item.id
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Stats Cards */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Active Cases</p>
-                <p className="text-2xl font-bold text-blue-600">0</p>
-              </div>
-              <Shield className="text-blue-500 w-8 h-8" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Reports Filed</p>
-                <p className="text-2xl font-bold text-green-600">0</p>
-              </div>
-              <CheckCircle className="text-green-500 w-8 h-8" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Pending Tasks</p>
-                <p className="text-2xl font-bold text-orange-600">0</p>
-              </div>
-              <AlertCircle className="text-orange-500 w-8 h-8" />
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Welcome to Police Portal</h2>
-          <p className="text-slate-600">
-            Your account has been verified and you now have full access to all police portal features.
-            Use the navigation menu to access case management, reports, and other tools.
-          </p>
-        </div>
+        {renderPage()}
       </main>
     </div>
   )

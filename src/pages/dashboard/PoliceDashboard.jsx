@@ -21,22 +21,22 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     { id: 'missing-persons', name: 'Missing Persons Registry', icon: Users },
   ]
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'tourist-search':
-        return <TouristSearch />
-      case 'emergency-dispatch':
-        return <EmergencyDispatch />
-      case 'fir-generator':
-        return <FIRGenerator />
-      case 'citizen-chat':
-        return <CitizenChat />
-      case 'missing-persons':
-        return <MissingPersons />
-      default:
-        return <DashboardHome />
-    }
+const renderPage = () => {
+  switch (currentPage) {
+    case 'tourist-search':
+      return <TouristSearch profile={profile} />
+    case 'emergency-dispatch':
+      return <EmergencyDispatch profile={profile} />
+    case 'fir-generator':
+      return <FIRGenerator profile={profile} />
+    case 'citizen-chat':
+      return <CitizenChat profile={profile} />
+    case 'missing-persons':
+      return <MissingPersons profile={profile} />
+    default:
+      return <DashboardHome />
   }
+}
 
   const DashboardHome = () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -279,6 +279,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {renderPage()}
       </main>
+      
 
       <style jsx>{`
         .scrollbar-hide {

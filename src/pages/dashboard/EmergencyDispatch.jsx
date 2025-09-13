@@ -20,7 +20,11 @@ import {
   Globe,
   Check,
   X,
-  Loader
+  Loader,
+  Shield,
+  ChevronDown,
+  Badge,
+  Activity
 } from 'lucide-react';
 
 // Multilingual translations
@@ -55,12 +59,14 @@ const translations = {
     actions: "Actions",
     acknowledge: "Acknowledge",
     assignUnit: "Assign Unit",
-    changePriority: "Priority",
-    sendMessage: "Quick Message",
+    changePriority: "Change Priority",
+    sendMessage: "Send Message",
     callTourist: "Call Tourist",
     contactFamily: "Contact Family",
     viewDetails: "View Details",
     assignedTo: "Assigned to",
+    handledBy: "Currently Handled by",
+    lastActionBy: "Last Action by",
     emergencyContacts: "Emergency Contacts",
     quickMessages: {
       help: "Help is on the way. Please stay calm and remain at your current location.",
@@ -69,10 +75,10 @@ const translations = {
       wait: "Please wait at a safe location. Emergency responders are en route."
     },
     priorityLevels: {
-      critical: "Critical",
-      high: "High", 
-      medium: "Medium",
-      low: "Low"
+      critical: "Critical - Immediate Response",
+      high: "High - Urgent Response", 
+      medium: "Medium - Standard Response",
+      low: "Low - Routine Response"
     },
     statusUpdated: "Status updated successfully",
     messageSent: "Message sent to tourist",
@@ -87,75 +93,13 @@ const translations = {
     sending: "Sending...",
     calling: "Calling...",
     contacting: "Contacting...",
-    acknowledging: "Processing..."
-  },
-  hi: {
-    title: "आपातकालीन डिस्पैच सेंटर",
-    activeAlerts: "सक्रिय आपातकालीन अलर्ट",
-    filterBy: "फ़िल्टर करें",
-    searchPlaceholder: "पर्यटक नाम या आईडी से खोजें...",
-    allStatus: "सभी स्थिति",
-    allTypes: "सभी प्रकार",
-    allPriority: "सभी प्राथमिकता",
-    new: "नया",
-    acknowledged: "स्वीकृत",
-    assigned: "सौंपा गया",
-    inProgress: "प्रगति में",
-    resolved: "हल हो गया",
-    closed: "बंद",
-    critical: "गंभीर",
-    high: "उच्च",
-    medium: "मध्यम",
-    low: "कम",
-    medicalEmergency: "चिकित्सा आपातकाल",
-    securityThreat: "सुरक्षा खतरा",
-    missingPerson: "लापता व्यक्ति",
-    naturalDisaster: "प्राकृतिक आपदा",
-    sos: "एसओएस",
-    panicButton: "पैनिक बटन",
-    touristId: "पर्यटक आईडी",
-    location: "स्थान",
-    time: "समय",
-    actions: "कार्य",
-    acknowledge: "स्वीकार करें",
-    assignUnit: "यूनिट सौंपें",
-    changePriority: "प्राथमिकता",
-    sendMessage: "त्वरित संदेश",
-    callTourist: "पर्यटक को कॉल करें",
-    contactFamily: "परिवार से संपर्क करें",
-    viewDetails: "विवरण देखें",
-    assignedTo: "को सौंपा गया",
-    emergencyContacts: "आपातकालीन संपर्क"
-  },
-  ta: {
-    title: "அவசர அனுப்புதல் மையம்",
-    activeAlerts: "செயலில் உள்ள அவசர எச்சரிக்கைகள்",
-    filterBy: "வடிகட்டு",
-    searchPlaceholder: "சுற்றுலாப் பயணி பெயர் அல்லது ஐடி மூலம் தேடு...",
-    new: "புதிய",
-    acknowledged: "ஏற்றுக்கொள்ளப்பட்டது",
-    assigned: "ஒதுக்கப்பட்டது",
-    critical: "முக்கியமான",
-    high: "உயர்",
-    medium: "நடுத்தர",
-    low: "குறைவான"
-  },
-  fr: {
-    title: "Centre de Répartition d'Urgence",
-    activeAlerts: "Alertes d'Urgence Actives",
-    filterBy: "Filtrer par",
-    searchPlaceholder: "Rechercher par nom ou ID de touriste...",
-    new: "Nouveau",
-    acknowledged: "Accusé réception",
-    assigned: "Assigné",
-    critical: "Critique",
-    high: "Élevé",
-    medium: "Moyen",
-    low: "Faible"
+    acknowledging: "Processing...",
+    selectPriority: "Select Priority Level",
+    priorityChanged: "Priority level updated"
   }
 };
 
-const EmergencyDispatch = () => {
+const EmergencyDispatch = ({ profile }) => {
   const [alerts, setAlerts] = useState([]);
   const [filteredAlerts, setFilteredAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +107,9 @@ const EmergencyDispatch = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showPriorityModal, setShowPriorityModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [language, setLanguage] = useState('en');
   const [notification, setNotification] = useState(null);
@@ -190,27 +136,35 @@ const EmergencyDispatch = () => {
     'Rescue Unit-01'
   ];
 
+  // Priority levels with descriptions
+  const priorityLevels = [
+    { value: 'Critical', label: 'Critical', description: 'Life-threatening emergency requiring immediate response', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200' },
+    { value: 'High', label: 'High', description: 'Serious situation requiring urgent attention', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
+    { value: 'Medium', label: 'Medium', description: 'Standard emergency response required', color: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
+    { value: 'Low', label: 'Low', description: 'Non-urgent situation, routine response', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200' }
+  ];
+
   // Priority colors
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-300';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low': return 'bg-green-100 text-green-800 border-green-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'critical': return 'bg-red-50 text-red-700 border-red-200';
+      case 'high': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'low': return 'bg-green-50 text-green-700 border-green-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   // Status colors
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'new': return 'bg-red-500 text-white';
-      case 'acknowledged': return 'bg-yellow-500 text-white';
-      case 'assigned': return 'bg-blue-500 text-white';
-      case 'in progress': return 'bg-purple-500 text-white';
-      case 'resolved': return 'bg-green-500 text-white';
-      case 'closed': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'new': return 'bg-red-600 text-white';
+      case 'acknowledged': return 'bg-yellow-600 text-white';
+      case 'assigned': return 'bg-blue-600 text-white';
+      case 'in progress': return 'bg-purple-600 text-white';
+      case 'resolved': return 'bg-green-600 text-white';
+      case 'closed': return 'bg-gray-600 text-white';
+      default: return 'bg-gray-600 text-white';
     }
   };
 
@@ -303,13 +257,48 @@ const EmergencyDispatch = () => {
     return actionLoading[`${alertId}-${action}`] || false;
   };
 
+  const updateAlertWithOfficerInfo = async (alertId, updateData, actionDescription) => {
+    const officerInfo = {
+      current_handling_officer_id: profile?.id,
+      current_handling_officer_name: profile?.name,
+      last_action_by_officer_id: profile?.id,
+      last_action_by_officer_name: profile?.name,
+      last_action_timestamp: new Date().toISOString()
+    };
+
+    // Add officer info to response actions
+    const currentAlert = alerts.find(a => a.id === alertId);
+    const responseActions = currentAlert?.response_actions || [];
+    
+    const updatedActions = [
+      ...responseActions,
+      {
+        action: actionDescription,
+        officer_id: profile?.id,
+        officer_name: profile?.name,
+        timestamp: new Date().toISOString(),
+        ...updateData.actionData || {}
+      }
+    ];
+
+    const finalUpdateData = {
+      ...updateData,
+      ...officerInfo,
+      response_actions: updatedActions
+    };
+
+    delete finalUpdateData.actionData; // Remove the temporary actionData
+    return finalUpdateData;
+  };
+
   const updateAlertStatus = async (alertId, newStatus, additionalData = {}) => {
     setLoadingState(alertId, 'acknowledge', true);
     
     try {
       const updateData = {
         status: newStatus,
-        ...additionalData
+        ...additionalData,
+        actionData: { status_change: `Changed to ${newStatus}` }
       };
 
       if (newStatus === 'Acknowledged') {
@@ -318,16 +307,18 @@ const EmergencyDispatch = () => {
         updateData.resolved_at = new Date().toISOString();
       }
 
+      const finalUpdateData = await updateAlertWithOfficerInfo(alertId, updateData, `Status Changed to ${newStatus}`);
+
       const { error } = await supabase
         .from('emergency_alerts')
-        .update(updateData)
+        .update(finalUpdateData)
         .eq('id', alertId);
 
       if (error) throw error;
+
+      console.log('Alert updated successfully:', data);
       
-      // Reload alerts to get fresh data
       await loadAlerts();
-      
       showNotification(t.statusUpdated, 'success');
     } catch (error) {
       console.error('Error updating alert:', error);
@@ -337,26 +328,43 @@ const EmergencyDispatch = () => {
     }
   };
 
-  const changePriority = async (alertId, newPriority) => {
-    setLoadingState(alertId, 'priority', true);
+  const changePriority = async () => {
+    if (!selectedAlert || !selectedPriority) return;
+    
+    setLoadingState(selectedAlert.id, 'priority', true);
     
     try {
+      const updateData = {
+        priority_level: selectedPriority,
+        actionData: { 
+          priority_change: `Changed from ${selectedAlert.priority_level} to ${selectedPriority}`,
+          previous_priority: selectedAlert.priority_level,
+          new_priority: selectedPriority
+        }
+      };
+
+      const finalUpdateData = await updateAlertWithOfficerInfo(
+        selectedAlert.id, 
+        updateData, 
+        `Priority Changed to ${selectedPriority}`
+      );
+
       const { error } = await supabase
         .from('emergency_alerts')
-        .update({ priority_level: newPriority })
-        .eq('id', alertId);
+        .update(finalUpdateData)
+        .eq('id', selectedAlert.id);
 
       if (error) throw error;
       
-      // Reload alerts to get fresh data
       await loadAlerts();
-      
-      showNotification(`Priority changed to ${newPriority}`, 'success');
+      setShowPriorityModal(false);
+      setSelectedPriority('');
+      showNotification(t.priorityChanged, 'success');
     } catch (error) {
       console.error('Error changing priority:', error);
       showNotification('Error changing priority', 'error');
     } finally {
-      setLoadingState(alertId, 'priority', false);
+      setLoadingState(selectedAlert.id, 'priority', false);
     }
   };
 
@@ -366,32 +374,29 @@ const EmergencyDispatch = () => {
     setLoadingState(selectedAlert.id, 'assign', true);
 
     try {
-      const currentAlert = alerts.find(a => a.id === selectedAlert.id);
-      const responseActions = currentAlert?.response_actions || [];
-      
       const updateData = {
         status: 'Assigned',
         assigned_unit_name: selectedUnit,
-        response_actions: [
-          ...responseActions,
-          {
-            action: 'Unit Assigned',
-            unit: selectedUnit,
-            timestamp: new Date().toISOString()
-          }
-        ]
+        actionData: { 
+          unit: selectedUnit,
+          assignment_type: 'Unit Assignment'
+        }
       };
+
+      const finalUpdateData = await updateAlertWithOfficerInfo(
+        selectedAlert.id, 
+        updateData, 
+        `Unit Assigned: ${selectedUnit}`
+      );
 
       const { error } = await supabase
         .from('emergency_alerts')
-        .update(updateData)
+        .update(finalUpdateData)
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
       
-      // Reload alerts to get fresh data
       await loadAlerts();
-      
       setShowAssignModal(false);
       setSelectedUnit('');
       showNotification(t.unitAssigned, 'success');
@@ -409,32 +414,30 @@ const EmergencyDispatch = () => {
     setLoadingState(selectedAlert.id, 'message', true);
 
     try {
-      // In a real app, this would send SMS/push notification
       console.log(`Sending message to ${selectedAlert.tourist_phone}: ${message}`);
       
-      const currentAlert = alerts.find(a => a.id === selectedAlert.id);
-      const responseActions = currentAlert?.response_actions || [];
-      
-      const updatedActions = [
-        ...responseActions,
-        {
-          action: 'Quick Message Sent',
+      const updateData = {
+        actionData: {
           message: message,
           phone: selectedAlert.tourist_phone,
-          timestamp: new Date().toISOString()
+          message_type: 'Quick Message'
         }
-      ];
+      };
+
+      const finalUpdateData = await updateAlertWithOfficerInfo(
+        selectedAlert.id, 
+        updateData, 
+        `Quick Message Sent`
+      );
 
       const { error } = await supabase
         .from('emergency_alerts')
-        .update({ response_actions: updatedActions })
+        .update({ response_actions: finalUpdateData.response_actions })
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
 
-      // Reload alerts to get fresh data
       await loadAlerts();
-
       setShowMessageModal(false);
       showNotification(`${t.messageSent} (${selectedAlert.tourist_phone})`, 'success');
     } catch (error) {
@@ -451,33 +454,32 @@ const EmergencyDispatch = () => {
     setLoadingState(selectedAlert.id, 'contact', true);
 
     try {
-      // In a real app, this would trigger phone calls/SMS
       console.log(`Contacting emergency contacts for ${selectedAlert.tourist_name}`);
       
-      const currentAlert = alerts.find(a => a.id === selectedAlert.id);
-      const contacts = currentAlert?.emergency_contacts ? JSON.parse(currentAlert.emergency_contacts) : [];
-      const responseActions = currentAlert?.response_actions || [];
+      const contacts = selectedAlert?.emergency_contacts ? JSON.parse(selectedAlert.emergency_contacts) : [];
       
-      const updatedActions = [
-        ...responseActions,
-        {
-          action: 'Emergency Contacts Notified',
+      const updateData = {
+        actionData: {
           contacts: contacts,
           contactCount: contacts.length,
-          timestamp: new Date().toISOString()
+          contact_type: 'Emergency Contacts'
         }
-      ];
+      };
+
+      const finalUpdateData = await updateAlertWithOfficerInfo(
+        selectedAlert.id, 
+        updateData, 
+        `Emergency Contacts Notified (${contacts.length} contacts)`
+      );
 
       const { error } = await supabase
         .from('emergency_alerts')
-        .update({ response_actions: updatedActions })
+        .update({ response_actions: finalUpdateData.response_actions })
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
 
-      // Reload alerts to get fresh data
       await loadAlerts();
-
       setShowContactModal(false);
       showNotification(`${t.familyContacted} (${contacts.length} contacts)`, 'success');
     } catch (error) {
@@ -492,9 +494,33 @@ const EmergencyDispatch = () => {
     setLoadingState(selectedAlert?.id || 'call', 'call', true);
     
     try {
-      // In a real app, this would integrate with telephony system
       console.log(`Initiating call to tourist: ${phone}`);
       window.open(`tel:${phone}`);
+      
+      if (selectedAlert) {
+        const updateData = {
+          actionData: {
+            phone: phone,
+            call_type: 'Tourist Call'
+          }
+        };
+
+        const finalUpdateData = await updateAlertWithOfficerInfo(
+          selectedAlert.id, 
+          updateData, 
+          `Called Tourist: ${phone}`
+        );
+
+        const { data: updatedData, error } = await supabase
+          .from('emergency_alerts')
+          .update({ response_actions: finalUpdateData.response_actions })
+          .eq('id', selectedAlert.id)
+          .select();
+
+        if (error) throw error;
+        await loadAlerts();
+      }
+      
       showNotification(`Calling ${phone}`, 'success');
     } catch (error) {
       showNotification('Error initiating call', 'error');
@@ -537,23 +563,23 @@ const EmergencyDispatch = () => {
         </div>
       )}
 
-      <div className="p-8">
+      <div className="p-6">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-          <div className="flex justify-between items-center mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-3">{t.title}</h1>
-              <div className="flex items-center space-x-6 text-lg">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
+              <div className="flex items-center space-x-6 text-sm">
                 <span className="text-gray-600">{t.activeAlerts}: <span className="font-semibold text-blue-600">{filteredAlerts.length}</span></span>
-                <span className="text-gray-300">|</span>
+                <span className="text-gray-300">•</span>
                 <span className="text-gray-600">Critical: <span className="font-semibold text-red-600">{filteredAlerts.filter(a => a.priority_level === 'Critical').length}</span></span>
                 <span className="text-gray-600">New: <span className="font-semibold text-orange-600">{filteredAlerts.filter(a => a.status === 'New').length}</span></span>
               </div>
             </div>
             
             {/* Language Selector */}
-            <div className="flex items-center space-x-4 bg-gray-50 rounded-lg p-3">
-              <Globe className="w-5 h-5 text-gray-600" />
+            <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-3 py-2">
+              <Globe className="w-4 h-4 text-gray-600" />
               <select 
                 value={language} 
                 onChange={(e) => setLanguage(e.target.value)}
@@ -568,7 +594,7 @@ const EmergencyDispatch = () => {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
               <input
@@ -576,14 +602,14 @@ const EmergencyDispatch = () => {
                 placeholder={t.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">{t.allStatus}</option>
               <option value="new">{t.new}</option>
@@ -596,7 +622,7 @@ const EmergencyDispatch = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">{t.allTypes}</option>
               <option value="medical emergency">{t.medicalEmergency}</option>
@@ -610,7 +636,7 @@ const EmergencyDispatch = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">{t.allPriority}</option>
               <option value="critical">{t.critical}</option>
@@ -621,7 +647,7 @@ const EmergencyDispatch = () => {
 
             <button
               onClick={loadAlerts}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors"
+              className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
@@ -630,22 +656,23 @@ const EmergencyDispatch = () => {
         </div>
 
         {/* Alerts List */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {filteredAlerts.map((alert) => (
-            <div key={alert.id} className={`bg-white rounded-xl shadow-sm border-2 ${
-              alert.priority_level === 'Critical' ? 'border-red-300' : 
-              alert.priority_level === 'High' ? 'border-orange-300' : 'border-gray-200'
-            } overflow-hidden`}>
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
+            <div key={alert.id} className={`bg-white rounded-lg shadow-sm border-l-4 ${
+              alert.priority_level === 'Critical' ? 'border-l-red-500' : 
+              alert.priority_level === 'High' ? 'border-l-orange-500' : 
+              alert.priority_level === 'Medium' ? 'border-l-yellow-500' : 'border-l-green-500'
+            } border-r border-t border-b border-gray-200`}>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <span className="text-3xl">{getAlertIcon(alert.alert_type)}</span>
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="text-2xl">{getAlertIcon(alert.alert_type)}</span>
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
                           {alert.tourist_name}
                         </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <div className="flex items-center space-x-3 text-sm text-gray-600">
                           <span className="font-medium">{alert.tourist_id}</span>
                           <span>•</span>
                           <span>{alert.tourist_nationality}</span>
@@ -654,45 +681,66 @@ const EmergencyDispatch = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-4 py-2 rounded-full text-sm font-semibold border-2 ${getPriorityColor(alert.priority_level)}`}>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(alert.priority_level)}`}>
                           {alert.priority_level}
                         </span>
-                        <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(alert.status)}`}>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(alert.status)}`}>
                           {alert.status}
                         </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    {/* Officer Information */}
+                    {alert.current_handling_officer_name && (
+                      <div className="mb-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Shield className="w-4 h-4 text-blue-600" />
+                            <span className="text-blue-700 font-medium">{t.handledBy}:</span>
+                            <span className="text-blue-900 font-semibold">{alert.current_handling_officer_name}</span>
+                          </div>
+                          {alert.last_action_by_officer_name && alert.last_action_timestamp && (
+                            <div className="flex items-center space-x-2 text-xs text-blue-600 mt-1">
+                              <Activity className="w-3 h-3" />
+                              <span>{t.lastActionBy}: {alert.last_action_by_officer_name}</span>
+                              <span>•</span>
+                              <span>{formatTime(alert.last_action_timestamp)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                           <MapPin className="w-4 h-4 mr-2" />
                           {t.location}
                         </p>
-                        <p className="text-gray-900">{alert.location_address}</p>
+                        <p className="text-gray-900 text-sm">{alert.location_address}</p>
                       </div>
                       
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                           <Clock className="w-4 h-4 mr-2" />
                           {t.time}
                         </p>
-                        <p className="text-gray-900">{formatTime(alert.created_at)}</p>
+                        <p className="text-gray-900 text-sm">{formatTime(alert.created_at)}</p>
                       </div>
                     </div>
 
-                    <div className="mb-6">
-                      <p className="text-sm font-semibold text-gray-700 mb-3">Alert Message:</p>
-                      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                        <p className="text-gray-900">{alert.alert_message}</p>
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Alert Message:</p>
+                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                        <p className="text-gray-900 text-sm">{alert.alert_message}</p>
                       </div>
                     </div>
 
                     {alert.assigned_unit_name && (
-                      <div className="mb-6">
-                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                          <p className="text-sm text-blue-700">
+                      <div className="mb-4">
+                        <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                          <p className="text-sm text-green-700">
                             <UserCheck className="w-4 h-4 inline mr-2" />
                             {t.assignedTo}: <span className="font-semibold">{alert.assigned_unit_name}</span>
                           </p>
@@ -703,13 +751,13 @@ const EmergencyDispatch = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="border-t border-gray-200 pt-6">
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     {alert.status === 'New' && (
                       <button
                         onClick={() => updateAlertStatus(alert.id, 'Acknowledged')}
                         disabled={isActionLoading(alert.id, 'acknowledge')}
-                        className="bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                        className="bg-yellow-600 text-white px-3 py-2 rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                       >
                         {isActionLoading(alert.id, 'acknowledge') ? (
                           <>
@@ -731,22 +779,29 @@ const EmergencyDispatch = () => {
                         setShowAssignModal(true);
                       }}
                       disabled={isActionLoading(alert.id, 'assign')}
-                      className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                     >
                       <UserCheck className="w-4 h-4 mr-2" />
                       {t.assignUnit}
                     </button>
 
                     <button
-                      onClick={() => changePriority(alert.id, alert.priority_level === 'Critical' ? 'High' : 'Critical')}
+                      onClick={() => {
+                        setSelectedAlert(alert);
+                        setSelectedPriority(alert.priority_level);
+                        setShowPriorityModal(true);
+                      }}
                       disabled={isActionLoading(alert.id, 'priority')}
-                      className="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      className="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                       title={t.changePriority}
                     >
                       {isActionLoading(alert.id, 'priority') ? (
                         <Loader className="w-4 h-4 animate-spin" />
                       ) : (
-                        alert.priority_level === 'Critical' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />
+                        <>
+                          <ArrowUp className="w-4 h-4 mr-1" />
+                          Priority
+                        </>
                       )}
                     </button>
 
@@ -756,26 +811,26 @@ const EmergencyDispatch = () => {
                         setShowMessageModal(true);
                       }}
                       disabled={isActionLoading(alert.id, 'message')}
-                      className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                     >
                       <MessageSquare className="w-4 h-4 mr-2" />
-                      {t.sendMessage}
+                      Message
                     </button>
 
                     <button
                       onClick={() => callTourist(alert.tourist_phone)}
                       disabled={isActionLoading(alert.id, 'call')}
-                      className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                     >
                       {isActionLoading(alert.id, 'call') ? (
                         <>
                           <Loader className="w-4 h-4 mr-2 animate-spin" />
-                          {t.calling}
+                          Calling...
                         </>
                       ) : (
                         <>
                           <PhoneCall className="w-4 h-4 mr-2" />
-                          {alert.tourist_phone}
+                          Call
                         </>
                       )}
                     </button>
@@ -786,23 +841,33 @@ const EmergencyDispatch = () => {
                         setShowContactModal(true);
                       }}
                       disabled={isActionLoading(alert.id, 'contact')}
-                      className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
                     >
                       <Users className="w-4 h-4 mr-2" />
-                      {t.contactFamily}
+                      Contacts
                     </button>
                   </div>
 
                   {/* Response Actions Log */}
                   {alert.response_actions && alert.response_actions.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-gray-100">
-                      <p className="text-sm font-semibold text-gray-700 mb-3">Recent Actions:</p>
-                      <div className="space-y-2">
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Recent Actions:</p>
+                      <div className="space-y-1">
                         {alert.response_actions.slice(-3).map((action, index) => (
-                          <div key={index} className="flex items-center text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            <Check className="w-3 h-3 mr-2 text-green-500" />
-                            <span className="flex-1">{action.action}</span>
-                            <span className="text-xs text-gray-400">{formatTime(action.timestamp)}</span>
+                          <div key={index} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                            <div className="flex items-center">
+                              <Check className="w-3 h-3 mr-2 text-green-500" />
+                              <span className="text-gray-700">{action.action}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-500">
+                              {action.officer_name && (
+                                <span className="flex items-center">
+                                  <Badge className="w-3 h-3 mr-1" />
+                                  {action.officer_name}
+                                </span>
+                              )}
+                              <span>{formatTime(action.timestamp)}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -815,11 +880,74 @@ const EmergencyDispatch = () => {
         </div>
 
         {filteredAlerts.length === 0 && (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-              <AlertTriangle className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Emergency Alerts</h3>
+          <div className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <AlertTriangle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Emergency Alerts</h3>
               <p className="text-gray-600">No emergency alerts match your current filters.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Priority Change Modal */}
+        {showPriorityModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.changePriority}</h3>
+              <div className="mb-6">
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+                  <p className="text-sm text-blue-700 mb-1">Tourist:</p>
+                  <p className="font-semibold text-blue-900">{selectedAlert?.tourist_name}</p>
+                  <p className="text-sm text-blue-600">Current Priority: <span className="font-semibold">{selectedAlert?.priority_level}</span></p>
+                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">{t.selectPriority}:</label>
+                <div className="space-y-2">
+                  {priorityLevels.map((priority) => (
+                    <label key={priority.value} className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="priority"
+                        value={priority.value}
+                        checked={selectedPriority === priority.value}
+                        onChange={(e) => setSelectedPriority(e.target.value)}
+                        className="mt-1 text-blue-600 focus:ring-blue-500"
+                      />
+                      <div className={`flex-1 p-3 rounded-lg border ${priority.borderColor} ${priority.bgColor}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`font-semibold ${priority.color}`}>{priority.label}</span>
+                          {selectedPriority === priority.value && <Check className="w-4 h-4 text-green-600" />}
+                        </div>
+                        <p className={`text-sm ${priority.color} opacity-80`}>{priority.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={changePriority}
+                  disabled={!selectedPriority || selectedPriority === selectedAlert?.priority_level || isActionLoading(selectedAlert?.id, 'priority')}
+                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
+                >
+                  {isActionLoading(selectedAlert?.id, 'priority') ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Priority'
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPriorityModal(false);
+                    setSelectedPriority('');
+                  }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -827,10 +955,10 @@ const EmergencyDispatch = () => {
         {/* Assign Unit Modal */}
         {showAssignModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">{t.assignUnit}</h3>
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.assignUnit}</h3>
               <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
                   <p className="text-sm text-blue-700 mb-1">Tourist:</p>
                   <p className="font-semibold text-blue-900">{selectedAlert?.tourist_name}</p>
                   <p className="text-sm text-blue-600">{selectedAlert?.tourist_id}</p>
@@ -839,7 +967,7 @@ const EmergencyDispatch = () => {
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Choose available unit...</option>
                   {availableUnits.map((unit) => (
@@ -847,11 +975,11 @@ const EmergencyDispatch = () => {
                   ))}
                 </select>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex space-x-3">
                 <button
                   onClick={assignUnit}
                   disabled={!selectedUnit || isActionLoading(selectedAlert?.id, 'assign')}
-                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
                 >
                   {isActionLoading(selectedAlert?.id, 'assign') ? (
                     <>
@@ -867,9 +995,9 @@ const EmergencyDispatch = () => {
                     setShowAssignModal(false);
                     setSelectedUnit('');
                   }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
                 >
-                  {t.close}
+                  Cancel
                 </button>
               </div>
             </div>
@@ -879,23 +1007,23 @@ const EmergencyDispatch = () => {
         {/* Quick Message Modal */}
         {showMessageModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl p-8 w-full max-w-lg shadow-2xl">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">{t.sendMessage}</h3>
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.sendMessage}</h3>
               <div className="mb-6">
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-6">
+                <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
                   <p className="text-sm text-green-700 mb-1">Sending to:</p>
                   <p className="font-semibold text-green-900">{selectedAlert?.tourist_name}</p>
                   <p className="text-sm text-green-600 font-mono">{selectedAlert?.tourist_phone}</p>
                 </div>
                 
-                <p className="text-sm font-medium text-gray-700 mb-4">Quick Messages:</p>
-                <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700 mb-3">Quick Messages:</p>
+                <div className="space-y-2">
                   {Object.entries(t.quickMessages || {}).map(([key, message]) => (
                     <button
                       key={key}
                       onClick={() => sendQuickMessage(message)}
                       disabled={isActionLoading(selectedAlert?.id, 'message')}
-                      className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 text-sm transition-colors"
+                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 text-sm transition-colors"
                     >
                       {message}
                     </button>
@@ -903,8 +1031,8 @@ const EmergencyDispatch = () => {
                 </div>
                 
                 {isActionLoading(selectedAlert?.id, 'message') && (
-                  <div className="mt-4 flex items-center justify-center py-4">
-                    <Loader className="w-6 h-6 animate-spin text-blue-600 mr-2" />
+                  <div className="mt-4 flex items-center justify-center py-3">
+                    <Loader className="w-5 h-5 animate-spin text-blue-600 mr-2" />
                     <span className="text-blue-600 font-medium">{t.sending}</span>
                   </div>
                 )}
@@ -912,9 +1040,9 @@ const EmergencyDispatch = () => {
               <button
                 onClick={() => setShowMessageModal(false)}
                 disabled={isActionLoading(selectedAlert?.id, 'message')}
-                className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
               >
-                {t.close}
+                Close
               </button>
             </div>
           </div>
@@ -923,20 +1051,20 @@ const EmergencyDispatch = () => {
         {/* Contact Family Modal */}
         {showContactModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">{t.emergencyContacts}</h3>
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.emergencyContacts}</h3>
               <div className="mb-6">
-                <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-4">
                   <p className="text-sm text-red-700 mb-1">Tourist:</p>
                   <p className="font-semibold text-red-900">{selectedAlert?.tourist_name}</p>
                   <p className="text-sm text-red-600">{selectedAlert?.tourist_id}</p>
                 </div>
                 
                 {selectedAlert?.emergency_contacts ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <p className="text-sm font-medium text-gray-700">Emergency Contacts:</p>
                     {JSON.parse(selectedAlert.emergency_contacts).map((contact, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
                         <p className="font-semibold text-gray-900">{contact.name}</p>
                         <p className="text-sm text-gray-600 mb-1">{contact.relation}</p>
                         <p className="text-sm text-blue-600 font-mono">{contact.phone}</p>
@@ -944,8 +1072,8 @@ const EmergencyDispatch = () => {
                     ))}
                     
                     {isActionLoading(selectedAlert?.id, 'contact') && (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader className="w-6 h-6 animate-spin text-red-600 mr-2" />
+                      <div className="flex items-center justify-center py-3">
+                        <Loader className="w-5 h-5 animate-spin text-red-600 mr-2" />
                         <span className="text-red-600 font-medium">{t.contacting}</span>
                       </div>
                     )}
@@ -957,12 +1085,12 @@ const EmergencyDispatch = () => {
                   </div>
                 )}
               </div>
-              <div className="flex space-x-4">
+              <div className="flex space-x-3">
                 {selectedAlert?.emergency_contacts && (
                   <button
                     onClick={contactEmergencyContacts}
                     disabled={isActionLoading(selectedAlert?.id, 'contact')}
-                    className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
+                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
                   >
                     {isActionLoading(selectedAlert?.id, 'contact') ? (
                       <>
@@ -972,7 +1100,7 @@ const EmergencyDispatch = () => {
                     ) : (
                       <>
                         <Phone className="w-4 h-4 mr-2" />
-                        {t.contact}
+                        Contact All
                       </>
                     )}
                   </button>
@@ -980,9 +1108,9 @@ const EmergencyDispatch = () => {
                 <button
                   onClick={() => setShowContactModal(false)}
                   disabled={isActionLoading(selectedAlert?.id, 'contact')}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
                 >
-                  {t.close}
+                  Close
                 </button>
               </div>
             </div>

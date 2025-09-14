@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { MapPin, AlertTriangle, Users, TrendingUp, Eye, Filter, RefreshCw, Download, Shield, Navigation, Bell, Settings, Activity, ZoomIn, ZoomOut, Layers, Target } from 'lucide-react'
+import { MapPin, AlertTriangle, Users, TrendingUp, Filter, RefreshCw, Download, Shield, Navigation, Bell, Activity, ZoomIn, ZoomOut, Layers, Target } from 'lucide-react'
 
 // Mock geographical data for a tourist destination (using coordinates around India Gate, Delhi as example)
 const mockTouristData = [
@@ -38,26 +38,12 @@ const TouristClusteringDashboard = () => {
   const [incidents, setIncidents] = useState(mockIncidents)
   const [alerts, setAlerts] = useState([])
   const [isAutoRefresh, setIsAutoRefresh] = useState(true)
-  const [showGeofenceDetails, setShowGeofenceDetails] = useState(false)
   const [selectedCluster, setSelectedCluster] = useState(null)
-  const [userLocation, setUserLocation] = useState(null)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [areaTypeFilter, setAreaTypeFilter] = useState('all')
+  const [countRangeFilter, setCountRangeFilter] = useState('all')
 
-  // Geolocation tracking
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          })
-        },
-        (error) => console.log('Geolocation error:', error)
-      )
-    }
-  }, [])
-
-  // Real-time data simulation
+  // Real-time data simulation with controlled alert generation
   useEffect(() => {
     if (!isAutoRefresh) return
 
@@ -80,94 +66,116 @@ const TouristClusteringDashboard = () => {
         }
       }))
 
-      // Simulate new incidents occasionally
-      if (Math.random() < 0.1) {
+      // Simulate new incidents occasionally (much reduced frequency)
+      if (Math.random() < 0.02) { // Only 2% chance every 5 seconds
         const randomPoint = mockTouristData[Math.floor(Math.random() * mockTouristData.length)]
         const incidentTypes = ['overcrowding', 'security', 'medical', 'traffic']
         const severities = ['low', 'medium', 'high']
+        
+        const incidentType = incidentTypes[Math.floor(Math.random() * incidentTypes.length)]
+        const severity = severities[Math.floor(Math.random() * severities.length)]
         
         const newIncident = {
           id: Date.now(),
           lat: randomPoint.lat + (Math.random() - 0.5) * 0.001,
           lng: randomPoint.lng + (Math.random() - 0.5) * 0.001,
-          type: incidentTypes[Math.floor(Math.random() * incidentTypes.length)],
-          severity: severities[Math.floor(Math.random() * severities.length)],
+          type: incidentType,
+          severity: severity,
           timestamp: new Date(),
-          description: `${incidentTypes[Math.floor(Math.random() * incidentTypes.length)]} detected via AI monitoring`
+          description: `${incidentType} detected via AI monitoring`
         }
         
         setIncidents(prev => [newIncident, ...prev.slice(0, 9)]) // Keep latest 10
         
-        // Add alert
-        setAlerts(prev => [{
-          id: Date.now(),
-          message: `New ${newIncident.severity} severity ${newIncident.type} incident at ${randomPoint.area}`,
-          timestamp: new Date(),
-          type: newIncident.severity
-        }, ...prev.slice(0, 4)]) // Keep latest 5 alerts
+        // Add alert for incidents only
+        setAlerts(prev => {
+          const newAlert = {
+            id: `incident-${Date.now()}`,
+            message: `${severity.toUpperCase()}: ${incidentType} at ${randomPoint.area}`,
+            timestamp: new Date(),
+            type: severity,
+            area: randomPoint.area,
+            alertType: 'incident'
+          }
+          return [newAlert, ...prev.slice(0, 4)] // Keep latest 5 alerts
+        })
       }
-    }, 3000)
+    }, 5000) // Update every 5 seconds instead of 3
 
     return () => clearInterval(interval)
   }, [isAutoRefresh])
 
-  // Geofencing logic
+  // Controlled geofencing logic with proper deduplication
   const checkGeofenceViolations = useCallback(() => {
+    const now = Date.now()
+    
+    // Only check every few data updates to avoid spam
+    if (Math.random() > 0.3) return // Only 30% chance to check
+    
     touristData.forEach(point => {
-      geofences.forEach(fence => {
-        const distance = calculateDistance(point.lat, point.lng, fence.lat, fence.lng)
-        if (distance <= fence.radius && point.count > 150) {
-          // Trigger geofence alert
-          const alertExists = alerts.some(alert => 
-            alert.message.includes(fence.name) && 
-            Date.now() - new Date(alert.timestamp).getTime() < 60000 // Within last minute
+      if (point.count > 180) { // Higher threshold
+        // Find the closest geofence (simplified logic)
+        const relevantFence = geofences.find(fence => 
+          Math.abs(point.lat - fence.lat) < 0.002 && Math.abs(point.lng - fence.lng) < 0.002
+        )
+        
+        if (relevantFence) {
+          // Create unique alert identifier
+          const alertKey = `geofence-${relevantFence.id}-${point.id}`
+          
+          // Check if similar alert exists in last 10 minutes (much longer cooldown)
+          const recentAlertExists = alerts.some(alert => 
+            alert.alertKey === alertKey &&
+            now - new Date(alert.timestamp).getTime() < 600000 // 10 minutes cooldown
           )
           
-          if (!alertExists) {
-            setAlerts(prev => [{
-              id: Date.now(),
-              message: `Geofence violation: High density in ${fence.name}`,
-              timestamp: new Date(),
-              type: fence.alertLevel,
-              geofence: fence.name
-            }, ...prev.slice(0, 4)])
+          if (!recentAlertExists && Math.random() < 0.1) { // Only 10% chance even if conditions met
+            setAlerts(prev => {
+              const newAlert = {
+                id: `geofence-${now}`,
+                message: `Crowd density alert: ${point.count} tourists in ${relevantFence.name}`,
+                timestamp: new Date(),
+                type: relevantFence.alertLevel,
+                geofence: relevantFence.name,
+                area: point.area,
+                alertKey,
+                alertType: 'geofence'
+              }
+              return [newAlert, ...prev.slice(0, 4)]
+            })
           }
         }
-      })
+      }
     })
   }, [touristData, geofences, alerts])
 
   useEffect(() => {
-    checkGeofenceViolations()
+    const checkInterval = setInterval(checkGeofenceViolations, 15000) // Check every 15 seconds
+    return () => clearInterval(checkInterval)
   }, [checkGeofenceViolations])
-
-  // Utility function to calculate distance between two points
-  const calculateDistance = (lat1, lng1, lat2, lng2) => {
-    const R = 6371e3 // Earth's radius in meters
-    const φ1 = lat1 * Math.PI/180
-    const φ2 = lat2 * Math.PI/180
-    const Δφ = (lat2-lat1) * Math.PI/180
-    const Δλ = (lng2-lng1) * Math.PI/180
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-
-    return R * c
-  }
 
   const filteredData = useMemo(() => {
     let filtered = touristData
     if (riskFilter !== 'all') {
       filtered = filtered.filter(point => point.risk === riskFilter)
     }
+    if (areaTypeFilter !== 'all') {
+      filtered = filtered.filter(point => point.type === areaTypeFilter)
+    }
+    if (countRangeFilter !== 'all') {
+      if (countRangeFilter === 'low') {
+        filtered = filtered.filter(point => point.count <= 100)
+      } else if (countRangeFilter === 'medium') {
+        filtered = filtered.filter(point => point.count > 100 && point.count <= 200)
+      } else if (countRangeFilter === 'high') {
+        filtered = filtered.filter(point => point.count > 200)
+      }
+    }
     return filtered
-  }, [touristData, riskFilter])
+  }, [touristData, riskFilter, areaTypeFilter, countRangeFilter])
 
   const totalTourists = filteredData.reduce((sum, point) => sum + point.count, 0)
   const highRiskAreas = filteredData.filter(point => point.risk === 'high').length
-  const avgDensity = Math.round(totalTourists / filteredData.length) || 0
   const activeGeofences = geofences.filter(fence => fence.alertLevel === 'high').length
 
   const getIntensityColor = (count) => {
@@ -196,12 +204,46 @@ const TouristClusteringDashboard = () => {
     }
   }
 
+  const exportData = () => {
+    const data = {
+      timestamp: new Date().toISOString(),
+      summary: {
+        totalTourists,
+        activeAreas: filteredData.length,
+        highRiskAreas,
+        activeGeofences
+      },
+      touristData: filteredData.map(point => ({
+        area: point.area,
+        count: point.count,
+        type: point.type,
+        risk: point.risk,
+        coordinates: { lat: point.lat, lng: point.lng },
+        lastUpdate: point.timestamp
+      })),
+      incidents: incidents.slice(0, 10),
+      geofences: geofences,
+      alerts: alerts
+    }
+    
+    const dataStr = JSON.stringify(data, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tourist-data-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const MapVisualization = () => (
-    <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md border overflow-hidden">
       {/* Map Controls */}
       <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <h3 className="font-semibold text-gray-800">Interactive Heat Map</h3>
+          <h3 className="font-medium text-gray-800">Live Tourist Heat Map</h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setMapZoom(Math.max(10, mapZoom - 1))}
@@ -220,24 +262,18 @@ const TouristClusteringDashboard = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowGeofenceDetails(!showGeofenceDetails)}
-            className={`px-3 py-1 rounded-md text-sm ${showGeofenceDetails ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
+          <button className={`px-3 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-100`}>
             <Shield className="w-4 h-4 inline mr-1" />
-            Geofences
+            Zones
           </button>
-          
-          <div className="relative">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
-              <Layers className="w-4 h-4" />
-            </button>
-          </div>
+          <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <Layers className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       {/* Map Area */}
-      <div className="relative h-96 bg-gradient-to-br from-green-100 via-blue-50 to-yellow-50 overflow-hidden">
+      <div className="relative h-80 bg-gradient-to-br from-green-100 via-blue-50 to-yellow-50 overflow-hidden">
         {/* Base Map Simulation */}
         <div className="absolute inset-0 opacity-30">
           <div className="w-full h-full bg-gradient-to-br from-green-200 via-blue-100 to-yellow-100"></div>
@@ -255,7 +291,7 @@ const TouristClusteringDashboard = () => {
 
         {/* Tourist Clusters */}
         {selectedLayers.includes('clusters') && filteredData.map((point, index) => {
-          const size = Math.min(Math.max((point.count / 5) + 15, 20), 100)
+          const size = Math.min(Math.max((point.count / 5) + 15, 20), 80)
           const left = 15 + (index * 11) % 70
           const top = 20 + (index * 13) % 60
           
@@ -302,7 +338,7 @@ const TouristClusteringDashboard = () => {
               }}
               title={`${fence.name}\nType: ${fence.type}\nAlert Level: ${fence.alertLevel}\nRadius: ${fence.radius}m`}
             >
-              <Shield className="w-6 h-6 text-gray-600" />
+              <Shield className="w-5 h-5 text-gray-600" />
             </div>
           )
         })}
@@ -317,7 +353,7 @@ const TouristClusteringDashboard = () => {
           return (
             <div
               key={incident.id}
-              className={`absolute w-8 h-8 rounded-full flex items-center justify-center cursor-pointer animate-pulse ${
+              className={`absolute w-6 h-6 rounded-full flex items-center justify-center cursor-pointer animate-pulse ${
                 incident.severity === 'high' ? 'bg-red-600' :
                 incident.severity === 'medium' ? 'bg-orange-500' :
                 'bg-yellow-500'
@@ -331,41 +367,25 @@ const TouristClusteringDashboard = () => {
               }}
               title={`${incident.type} - ${incident.severity}\n${incident.description}\n${new Date(incident.timestamp).toLocaleTimeString()}`}
             >
-              <AlertTriangle className="w-5 h-5 text-white" />
+              <AlertTriangle className="w-4 h-4 text-white" />
             </div>
           )
         })}
 
-        {/* User Location */}
-        {userLocation && (
-          <div
-            className="absolute w-4 h-4 bg-blue-600 rounded-full border-2 border-white animate-pulse"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 25
-            }}
-            title="Your Location"
-          >
-            <div className="absolute inset-0 bg-blue-600 rounded-full animate-ping opacity-75"></div>
-          </div>
-        )}
-
         {/* Real-time Status */}
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
-          <div className="flex items-center space-x-2 mb-2">
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-md">
+          <div className="flex items-center space-x-2 mb-1">
             <div className={`w-2 h-2 rounded-full ${isAutoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-            <span className="text-xs font-medium">{isAutoRefresh ? 'Live Tracking' : 'Paused'}</span>
+            <span className="text-xs font-medium">{isAutoRefresh ? 'Live' : 'Paused'}</span>
           </div>
           <div className="text-xs text-gray-600">
-            Last update: {new Date().toLocaleTimeString()}
+            {new Date().toLocaleTimeString()}
           </div>
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg max-w-xs">
-          <h4 className="text-sm font-semibold mb-2">Tourist Density</h4>
+        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-md max-w-xs">
+          <h4 className="text-sm font-medium mb-2">Tourist Density</h4>
           <div className="grid grid-cols-2 gap-1 text-xs">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -384,34 +404,16 @@ const TouristClusteringDashboard = () => {
               <span>Critical (150+)</span>
             </div>
           </div>
-          
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <h4 className="text-sm font-semibold mb-2">Legend</h4>
-            <div className="space-y-1 text-xs">
-              <div className="flex items-center space-x-2">
-                <Shield className="w-3 h-3 text-blue-600" />
-                <span>Geofence Zone</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-3 h-3 text-red-600" />
-                <span>Active Incident</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                <span>Your Location</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Cluster Details Panel */}
         {selectedCluster && (
           <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
             <div className="flex justify-between items-start mb-3">
-              <h4 className="font-semibold text-gray-800">{selectedCluster.area}</h4>
+              <h4 className="font-medium text-gray-800">{selectedCluster.area}</h4>
               <button
                 onClick={() => setSelectedCluster(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 text-lg"
               >
                 ×
               </button>
@@ -449,8 +451,8 @@ const TouristClusteringDashboard = () => {
   const AnalyticsView = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Top Tourist Areas */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
           <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
           Highest Density Areas
         </h3>
@@ -475,7 +477,7 @@ const TouristClusteringDashboard = () => {
                   }`}>
                     {point.risk.toUpperCase()}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Rank #{index + 1}</p>
+                  <p className="text-xs text-gray-400 mt-1">#{index + 1}</p>
                 </div>
               </div>
             ))}
@@ -483,10 +485,10 @@ const TouristClusteringDashboard = () => {
       </div>
 
       {/* Active Geofences */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
           <Shield className="w-5 h-5 mr-2 text-green-600" />
-          Security Zones & Geofences
+          Security Zones
         </h3>
         <div className="space-y-3">
           {geofences.map((fence) => (
@@ -505,28 +507,22 @@ const TouristClusteringDashboard = () => {
                 <span>Type: {fence.type}</span>
                 <span>Radius: {fence.radius}m</span>
               </div>
-              <div className="mt-2">
-                <div className="flex items-center text-xs text-gray-500">
-                  <Target className="w-3 h-3 mr-1" />
-                  <span>Lat: {fence.lat.toFixed(4)}, Lng: {fence.lng.toFixed(4)}</span>
-                </div>
-              </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Recent Incidents */}
-      <div className="bg-white rounded-xl shadow-lg p-6 lg:col-span-2">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
+        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
           <AlertTriangle className="w-5 h-5 mr-2 text-red-600" />
-          Recent Incidents & Alerts
+          Recent Incidents
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {incidents.slice(0, 6).map((incident) => {
             const timeAgo = Math.floor((Date.now() - new Date(incident.timestamp).getTime()) / 60000)
             return (
-              <div key={incident.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+              <div key={incident.id} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
                 <div className="flex items-center justify-between mb-2">
                   <div className={`px-2 py-1 rounded text-xs font-medium ${
                     incident.severity === 'high' ? 'bg-red-100 text-red-700' :
@@ -539,11 +535,7 @@ const TouristClusteringDashboard = () => {
                     {timeAgo}m ago
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 mb-2">{incident.description}</p>
-                <div className="text-xs text-gray-500">
-                  <Navigation className="w-3 h-3 inline mr-1" />
-                  {incident.lat.toFixed(4)}, {incident.lng.toFixed(4)}
-                </div>
+                <p className="text-sm text-gray-700">{incident.description}</p>
               </div>
             )
           })}
@@ -553,13 +545,13 @@ const TouristClusteringDashboard = () => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tourist Clustering & Safety Monitoring</h1>
-            <p className="text-gray-600 mt-1">Real-time visualization with geofencing and location-based alerts</p>
+            <h1 className="text-2xl font-bold text-gray-900">Tourist Monitoring Dashboard</h1>
+            <p className="text-gray-600 mt-1">Real-time crowd monitoring and safety alerts</p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
@@ -586,7 +578,7 @@ const TouristClusteringDashboard = () => {
                 }`}
               >
                 <MapPin className="w-4 h-4 mr-1 inline" />
-                Heat Map
+                Map View
               </button>
               <button
                 onClick={() => setSelectedView('analytics')}
@@ -605,7 +597,7 @@ const TouristClusteringDashboard = () => {
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
             >
               <option value="1h">Last Hour</option>
               <option value="6h">Last 6 Hours</option>
@@ -616,12 +608,12 @@ const TouristClusteringDashboard = () => {
             <select
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
             >
-              <option value="all">All Risk Levels</option>
-              <option value="high">High Risk Only</option>
-              <option value="medium">Medium Risk Only</option>
-              <option value="low">Low Risk Only</option>
+              <option value="all">All Levels</option>
+              <option value="high">High Risk</option>
+              <option value="medium">Medium Risk</option>
+              <option value="low">Low Risk</option>
             </select>
 
             {/* Auto-refresh Toggle */}
@@ -639,24 +631,29 @@ const TouristClusteringDashboard = () => {
           </div>
         </div>
 
-        {/* Live Alerts Banner */}
+        {/* Live Alerts Banner - FIXED VERSION */}
         {alerts.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h4 className="text-red-800 font-medium mb-2">Live Alerts ({alerts.length})</h4>
-                <div className="space-y-1">
+                <h4 className="text-red-800 font-medium mb-2">Active Alerts ({alerts.length})</h4>
+                <div className="space-y-2">
                   {alerts.slice(0, 3).map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between text-sm">
-                      <span className="text-red-700">{alert.message}</span>
-                      <span className="text-red-500 text-xs">
+                    <div key={alert.id} className="flex items-start justify-between text-sm bg-white/50 p-2 rounded">
+                      <div className="flex-1">
+                        <span className="text-red-700 font-medium">{alert.message}</span>
+                        {alert.area && (
+                          <div className="text-red-600 text-xs mt-1">Location: {alert.area}</div>
+                        )}
+                      </div>
+                      <span className="text-red-500 text-xs whitespace-nowrap ml-3">
                         {Math.floor((Date.now() - new Date(alert.timestamp).getTime()) / 60000)}m ago
                       </span>
                     </div>
                   ))}
                   {alerts.length > 3 && (
-                    <div className="text-red-600 text-xs">
+                    <div className="text-red-600 text-xs font-medium">
                       +{alerts.length - 3} more alerts...
                     </div>
                   )}
@@ -668,51 +665,51 @@ const TouristClusteringDashboard = () => {
 
         {/* Key Metrics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-blue-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Tourists</p>
-                <p className="text-3xl font-bold text-blue-600">{totalTourists.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">{totalTourists.toLocaleString()}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <TrendingUp className="w-3 h-3 mr-1" />
-                  +{Math.floor(Math.random() * 15 + 5)}% from yesterday
+                  +{Math.floor(Math.random() * 15 + 5)}% today
                 </p>
               </div>
               <Users className="text-blue-500 w-8 h-8" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-green-100">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-green-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Active Areas</p>
-                <p className="text-3xl font-bold text-green-600">{filteredData.length}</p>
+                <p className="text-2xl font-bold text-green-600">{filteredData.length}</p>
                 <p className="text-xs text-gray-500 mt-1">Monitoring zones</p>
               </div>
               <MapPin className="text-green-500 w-8 h-8" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-red-100">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-red-100">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">High Risk Areas</p>
-                <p className="text-3xl font-bold text-red-600">{highRiskAreas}</p>
+                <p className="text-2xl font-bold text-red-600">{highRiskAreas}</p>
                 <p className="text-xs text-orange-600 flex items-center mt-1">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  Requires attention
+                  Needs attention
                 </p>
               </div>
               <AlertTriangle className="text-red-500 w-8 h-8" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-purple-100">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-purple-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Active Geofences</p>
-                <p className="text-3xl font-bold text-purple-600">{activeGeofences}</p>
-                <p className="text-xs text-gray-500 mt-1">Security zones</p>
+                <p className="text-sm text-gray-600 mb-1">Security Zones</p>
+                <p className="text-2xl font-bold text-purple-600">{activeGeofences}</p>
+                <p className="text-xs text-gray-500 mt-1">Active monitoring</p>
               </div>
               <Shield className="text-purple-500 w-8 h-8" />
             </div>
@@ -721,70 +718,147 @@ const TouristClusteringDashboard = () => {
 
         {/* Main Content Area */}
         <div className="space-y-6">
+          {/* Advanced Filters Panel */}
+          {showAdvancedFilters && (
+            <div className="bg-white rounded-lg shadow-md p-6 border">
+              <h3 className="font-medium text-gray-800 mb-4">Advanced Filters</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Area Type</label>
+                  <select
+                    value={areaTypeFilter}
+                    onChange={(e) => setAreaTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="monument">Monument</option>
+                    <option value="park">Park</option>
+                    <option value="memorial">Memorial</option>
+                    <option value="recreation">Recreation</option>
+                    <option value="museum">Museum</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="transport">Transport</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tourist Count Range</label>
+                  <select
+                    value={countRangeFilter}
+                    onChange={(e) => setCountRangeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+                  >
+                    <option value="all">All Ranges</option>
+                    <option value="low">Low (0-100)</option>
+                    <option value="medium">Medium (101-200)</option>
+                    <option value="high">High (200+)</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Actions</label>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setRiskFilter('all')
+                        setAreaTypeFilter('all')
+                        setCountRangeFilter('all')
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      onClick={() => setShowAdvancedFilters(false)}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="text-sm text-blue-800">
+                  <span className="font-medium">Current Filters:</span>
+                  {riskFilter !== 'all' && <span className="ml-2 px-2 py-1 bg-blue-100 rounded">Risk: {riskFilter}</span>}
+                  {areaTypeFilter !== 'all' && <span className="ml-2 px-2 py-1 bg-blue-100 rounded">Type: {areaTypeFilter}</span>}
+                  {countRangeFilter !== 'all' && <span className="ml-2 px-2 py-1 bg-blue-100 rounded">Count: {countRangeFilter}</span>}
+                  {riskFilter === 'all' && areaTypeFilter === 'all' && countRangeFilter === 'all' && (
+                    <span className="ml-2 text-gray-600">No filters applied</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
           {selectedView === 'heatmap' ? <MapVisualization /> : <AnalyticsView />}
         </div>
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center">
           <div className="flex space-x-3">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+            <button 
+              onClick={exportData}
+              className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
+            >
               <Download className="w-4 h-4" />
               <span>Export Data</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
-              <Settings className="w-4 h-4" />
-              <span>Configure Alerts</span>
+            <button 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg text-sm font-medium shadow-sm transition-colors ${
+                showAdvancedFilters 
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Advanced Filters</span>
             </button>
           </div>
           
-          <div className="flex space-x-3">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors">
-              <Eye className="w-4 h-4" />
-              <span>Full Screen</span>
-            </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 shadow-sm transition-colors">
-              <Target className="w-4 h-4" />
-              <span>Emergency Protocol</span>
-            </button>
+          <div className="text-sm text-gray-500">
+            Last updated: {new Date().toLocaleTimeString()} • System operational
           </div>
         </div>
 
         {/* Footer Information */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">System Status</h4>
+              <h4 className="font-medium text-gray-800 mb-2">System Status</h4>
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Geofencing API: Online</span>
+                  <span>Monitoring: Active</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Location Services: Active</span>
+                  <span>Data Flow: Normal</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Alert System: Operational</span>
+                  <span>Alerts: Operational</span>
                 </div>
               </div>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Data Sources</h4>
+              <h4 className="font-medium text-gray-800 mb-2">Data Sources</h4>
               <div className="space-y-1">
-                <div>GPS Tracking: Real-time</div>
                 <div>Crowd Analytics: AI-powered</div>
                 <div>Incident Reports: Live feed</div>
+                <div>Security Zones: Real-time</div>
               </div>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Integration</h4>
+              <h4 className="font-medium text-gray-800 mb-2">Coverage</h4>
               <div className="space-y-1">
-                <div>Ministry of Tourism</div>
-                <div>State Police Department</div>
-                <div>Emergency Services</div>
+                <div>Area: Delhi Tourism Zone</div>
+                <div>Active Sensors: 8 zones</div>
+                <div>Update Interval: 5 seconds</div>
               </div>
             </div>
           </div>

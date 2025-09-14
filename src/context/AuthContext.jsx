@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [initialized, setInitialized] = useState(false)
   const [profileError, setProfileError] = useState(null)
-  
+
   // Use refs to prevent duplicate listeners and logout calls
   const authListenerRef = useRef(null)
   const isLoggingOutRef = useRef(false)
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     initializeAuth()
-    
+
     // Cleanup on unmount
     return () => {
       if (authListenerRef.current) {
@@ -37,13 +37,13 @@ export const AuthProvider = ({ children }) => {
   const initializeAuth = async () => {
     try {
       console.log('Initializing auth...')
-      
+
       // Set up auth listener FIRST, before getting session
       if (!authListenerRef.current) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event, session?.user?.id || 'no user')
-            
+
             // Handle different auth events
             if (event === 'SIGNED_OUT') {
               console.log('User signed out, clearing state')
@@ -56,16 +56,16 @@ export const AuthProvider = ({ children }) => {
               setLoading(false)
               return
             }
-            
+
             if (event === 'TOKEN_REFRESHED') {
               console.log('Token refreshed, maintaining current state')
               return
             }
-            
+
             // Handle user sign in - prevent duplicate profile fetches
             if (session?.user) {
               const newUserId = session.user.id
-              
+
               // Only process if it's a genuinely new user or we don't have a profile yet
               if (newUserId !== currentUserIdRef.current) {
                 console.log('New user signed in:', newUserId)
@@ -89,13 +89,13 @@ export const AuthProvider = ({ children }) => {
             }
           }
         )
-        
+
         authListenerRef.current = { subscription }
       }
-      
+
       // Get initial session AFTER setting up listener
       const { data: { session }, error } = await supabase.auth.getSession()
-      
+
       if (error) {
         console.error('Error getting session:', error)
         setLoading(false)
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
         setProfile(null)
         setLoading(false)
       }
-      
+
       setInitialized(true)
     } catch (error) {
       console.error('Error initializing auth:', error)
@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }) => {
       if (!userId) setLoading(false)
       return
     }
-    
+
     // Prevent too many retry attempts
     if (profileFetchAttempts.current >= 3) {
       console.log('Max profile fetch attempts reached, stopping retries')
@@ -137,34 +137,37 @@ export const AuthProvider = ({ children }) => {
       setLoading(false)
       return
     }
-    
+
     isLoadingProfileRef.current = true
     profileFetchAttempts.current++
-    
+
+    let error = null // Declare error variable to track it
+
     try {
       console.log(`Loading profile for user: ${userId} (attempt ${profileFetchAttempts.current})`)
       setProfileError(null)
-      
+
       // Shorter timeout for retries
       const timeoutDuration = isRetry ? 5000 : 15000
-      
+
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Profile fetch timeout')), timeoutDuration)
       })
-      
+
       const profilePromise = authAPI.getProfile(userId)
-      
+
       const profileData = await Promise.race([profilePromise, timeoutPromise])
       setProfile(profileData)
       profileFetchAttempts.current = 0 // Reset on success
       console.log('Profile loaded successfully:', profileData.role)
       setLoading(false)
-    } catch (error) {
-      console.error('Error loading profile:', error)
-      
-      if (error.message === 'Profile fetch timeout') {
+    } catch (err) {
+      error = err // Store the error for use in finally block
+      console.error('Error loading profile:', err)
+
+      if (err.message === 'Profile fetch timeout') {
         console.error(`Profile fetch timed out (attempt ${profileFetchAttempts.current})`)
-        
+
         // Retry once more with shorter timeout
         if (profileFetchAttempts.current < 3) {
           console.log('Retrying profile fetch...')
@@ -173,9 +176,9 @@ export const AuthProvider = ({ children }) => {
           return // Don't set loading to false yet
         }
       }
-      
+
       setProfile(null)
-      setProfileError(error.message)
+      setProfileError(err.message)
       setLoading(false)
     } finally {
       // Only reset the loading flag if we're not retrying
@@ -184,12 +187,11 @@ export const AuthProvider = ({ children }) => {
       }
     }
   }
-
   const login = async (email, password) => {
     try {
       setLoading(true)
       console.log('Starting login process...')
-      
+
       // Clear any existing state first
       setUser(null)
       setProfile(null)
@@ -197,7 +199,7 @@ export const AuthProvider = ({ children }) => {
       profileFetchAttempts.current = 0
       currentUserIdRef.current = null
       isLoadingProfileRef.current = false
-      
+
       const data = await authAPI.signIn(email, password)
       console.log('Login successful:', data.user?.id)
       return data
@@ -226,11 +228,11 @@ export const AuthProvider = ({ children }) => {
       console.log('Logout already in progress, skipping...')
       return
     }
-    
+
     try {
       isLoggingOutRef.current = true
       console.log('Starting logout process...')
-      
+
       // Clear local state immediately
       setUser(null)
       setProfile(null)
@@ -239,18 +241,18 @@ export const AuthProvider = ({ children }) => {
       currentUserIdRef.current = null
       isLoadingProfileRef.current = false
       setLoading(false)
-      
+
       // Try to sign out from Supabase
       const { error } = await supabase.auth.signOut({
         scope: 'local' // Only sign out from this tab/browser
       })
-      
+
       if (error) {
         console.log('Supabase logout error (may be expected):', error.message)
       } else {
         console.log('Supabase logout successful')
       }
-      
+
       console.log('Logout completed successfully')
     } catch (error) {
       console.log('Logout error (expected if no session):', error.message)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X } from 'lucide-react'
+import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin } from 'lucide-react'
 
 // Import page components
 import TouristSearch from './TouristSearch'
@@ -7,24 +7,28 @@ import EmergencyDispatch from './EmergencyDispatch'
 import FIRGenerator from './FIRGenerator'
 import CitizenChat from './CitizenChat'
 import MissingPersons from './MissingPersons'
+import TouristHeatMap from './TouristHeatMap'
 
 const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const navigationItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: Shield },
-    { id: 'tourist-search', name: 'Tourist Search', icon: Search },
-    { id: 'emergency-dispatch', name: 'Emergency Dispatch', icon: Phone },
-    { id: 'fir-generator', name: 'E-FIR Generator', icon: FileText },
-    { id: 'citizen-chat', name: 'Citizen Support Chat', icon: MessageCircle },
-    { id: 'missing-persons', name: 'Missing Persons Registry', icon: Users },
-  ]
+const navigationItems = [
+  { id: 'dashboard', name: 'Dashboard', icon: Shield },
+  { id: 'tourist-search', name: 'Tourist Search', icon: Search },
+  { id: 'tourist-heatmap', name: 'Tourist Analytics', icon: MapPin },
+  { id: 'emergency-dispatch', name: 'Emergency Dispatch', icon: Phone },
+  { id: 'fir-generator', name: 'E-FIR Generator', icon: FileText },
+  { id: 'citizen-chat', name: 'Citizen Support Chat', icon: MessageCircle },
+  { id: 'missing-persons', name: 'Missing Persons Registry', icon: Users },
+]
 
 const renderPage = () => {
   switch (currentPage) {
     case 'tourist-search':
       return <TouristSearch profile={profile} />
+    case 'tourist-heatmap':
+      return <TouristHeatMap profile={profile} />
     case 'emergency-dispatch':
       return <EmergencyDispatch profile={profile} />
     case 'fir-generator':

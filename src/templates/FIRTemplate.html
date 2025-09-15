@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIR Template</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 0;
+            padding: 20px;
+            background: white;
+            font-size: 12px;
+            line-height: 1.4;
+            position: relative;
+        }
+        
+        /* Watermark */
+        body::before {
+            content: "GOVERNMENT DOCUMENT";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 48px;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.05);
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .fir-form {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 25px;
+            position: relative;
+            background: white;
+        }
+        
+        .header {
+            position: relative;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 60px;
+            height: 60px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            background: #f8f8f8;
+        }
+        
+        .main-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            margin-top: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .form-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+            display: inline-block;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .field {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            line-height: 1.6;
+        }
+        
+        .field-label {
+            min-width: 120px;
+            font-weight: bold;
+        }
+        
+        .field-input {
+            border-bottom: 1px dotted #000;
+            min-width: 200px;
+            margin: 0 8px;
+            padding: 3px 8px;
+            display: inline-block;
+        }
+        
+        .field-input.long {
+            min-width: 400px;
+        }
+        
+        .field-input.short {
+            min-width: 100px;
+        }
+        
+        .field-row {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .field-row .field {
+            margin-bottom: 0;
+        }
+        
+        .text-area {
+            border: 1px solid #000;
+            min-height: 80px;
+            padding: 8px;
+            margin-top: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        .asterisk {
+            color: red;
+            font-weight: bold;
+        }
+        
+        /* Improved spacing for sections */
+        .section:not(:last-child) {
+            border-bottom: 1px dotted #ccc;
+            padding-bottom: 20px;
+        }
+        
+        /* Better alignment for section items */
+        .section .field:not(:first-child) {
+            margin-left: 20px;
+        }
+        
+        .section-content {
+            padding-left: 10px;
+        }
+        
+        @media print {
+            body::before {
+                position: absolute;
+            }
+            
+            .fir-form {
+                border: 2px solid #000;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fir-form">
+        <div class="header">
+            <div class="logo">
+                GOVT<br>SEAL
+            </div>
+            
+            <div class="main-title">FIRST INFORMATION REPORT</div>
+            <div class="subtitle">(Under Section 154 Cr.P.C)</div>
+            <div class="form-title">FORM - IF1 - (Integrated Form)</div>
+        </div>
+
+        <!-- Section 1: Basic Identification -->
+        <div class="section">
+            <div class="section-title">1. Dist. <span class="field-input" id="district"></span> P.S. <span class="field-input" id="police-station"></span> Year <span class="field-input short" id="year"></span> F.I.R. No. <span class="field-input" id="fir-number"></span> Date <span class="field-input short" id="fir-date"></span></div>
+        </div>
+
+        <!-- Section 2: Acts and Sections -->
+        <div class="section">
+            <div class="section-title">2. (i) <span class="asterisk">*</span>Act <span class="field-input" id="act1"></span> <span class="asterisk">*</span>Sections <span class="field-input" id="sections1"></span></div>
+        </div>
+
+        <!-- Section 3: Occurrence of Offence -->
+        <div class="section">
+            <div class="section-title">3. (a) <span class="asterisk">*</span> Occurrence of Offence: <span class="asterisk">*</span> Day <span class="field-input short" id="occurrence-day"></span> <span class="asterisk">*</span>Date <span class="field-input short" id="occurrence-date"></span> <span class="asterisk">*</span>Time <span class="field-input short" id="occurrence-time"></span></div>
+            <div class="section-content">
+                <div class="field">(b) Information received at P.S. Date <span class="field-input short" id="info-received-date"></span> Time <span class="field-input short" id="info-received-time"></span></div>
+                <div class="field">(c) General Diary Reference: Entry No(s) <span class="field-input" id="diary-entry"></span> Time <span class="field-input short" id="diary-time"></span></div>
+            </div>
+        </div>
+
+        <!-- Section 4: Type of Information -->
+        <div class="section">
+            <div class="section-title">4. Type of information: <span class="field-input" id="info-type"></span> <span class="asterisk">*</span>Written / Oral</div>
+        </div>
+
+        <!-- Section 5: Place of Occurrence -->
+        <div class="section">
+            <div class="section-title">5. Place of occurrence: <span class="field-input" id="direction-distance"></span> </div>
+            <div class="section-content">
+                <div class="field">(b) <span class="asterisk">*</span> Address <span class="field-input long" id="incident-address"></span></div>
+            </div>
+        </div>
+
+        <!-- Section 6: Complainant / Information -->
+        <div class="section">
+            <div class="section-title">6. Complainant / information:</div>
+            <div class="section-content">
+                <div class="field">(a) Name <span class="field-input long" id="complainant-name"></span></div>
+                <div class="field-row">
+                    <div class="field">(b) Nationality <span class="field-input short" id="nationality"></span></div>
+                </div>
+                <div class="field">(c) Address: <span class="field-input long" id="complainant-address"></span></div>
+            </div>
+        </div>
+
+        <!-- Section 7: Details of Accused -->
+        <div class="section">
+            <div class="section-title">7. Details of known / suspected / unknown/accused with full particulars</div>
+            <div class="section-content">
+                <div class="field">(Attach separate sheet if necessary):</div>
+                <div class="text-area" id="accused-details"></div>
+            </div>
+        </div>
+
+        <!-- Section 8: Reasons for Delay -->
+        <div class="section">
+            <div class="section-title">8. Reasons for delay in reporting by the complainant / Informant</div>
+            <div class="section-content">
+                <div class="text-area" id="delay-reasons"></div>
+            </div>
+        </div>
+
+        <!-- Section 9: Properties Involved -->
+        <div class="section">
+            <div class="section-title">9. Particulars of properties stolen / involved (Attach separate sheet if necessary):</div>
+            <div class="section-content">
+                <div class="text-area" id="properties-involved"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

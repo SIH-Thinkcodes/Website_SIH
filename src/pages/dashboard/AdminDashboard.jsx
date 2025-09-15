@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Shield, Users, CheckCircle, Clock, LogOut, UserCheck, UserX, Eye, X, FileText, Phone, MapPin, Badge as BadgeIcon, Building, AlertCircle } from 'lucide-react'
 import { User } from 'lucide-react'
 const AdminDashboard = ({ profile, onLogout, onApproveOfficer, onRejectOfficer, pendingOfficers, activeOfficers }) => {
@@ -76,17 +76,18 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, onRejectOfficer, 
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
+        <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-3 items-center">
+          <div className="h-10" />
+          <div className="flex items-center justify-center space-x-3">
             <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
               <Shield className="text-white w-6 h-6" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Police Admin Portal</h1>
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-slate-800">Welcome to Police Admin Portal</h1>
               <p className="text-sm text-slate-600">Administrator Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-end space-x-4">
             <div className="text-right">
               <p className="font-semibold text-slate-800">{profile?.name}</p>
               <p className="text-sm text-slate-600 capitalize">{profile?.role}</p>
@@ -103,7 +104,7 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, onRejectOfficer, 
         {/* Navigation Tabs */}
         <nav className="border-t border-slate-100">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex space-x-1 py-2">
+            <div className="flex justify-center space-x-1 py-3">
               <button
                 onClick={() => setCurrentView('pending')}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -132,7 +133,7 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, onRejectOfficer, 
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-10">
         {/* Error Display */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-center">
@@ -147,7 +148,7 @@ const AdminDashboard = ({ profile, onLogout, onApproveOfficer, onRejectOfficer, 
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           {/* Stats Cards */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
             <div className="flex items-center justify-between">

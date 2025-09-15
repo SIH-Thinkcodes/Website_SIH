@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  MessageCircle, 
-  Users, 
-  Search, 
-  Send, 
-  Phone, 
-  MapPin, 
+import {
+  MessageCircle,
+  Users,
+  Search,
+  Send,
+  Phone,
+  MapPin,
   Calendar,
   Shield,
   Clock,
@@ -43,14 +43,14 @@ const PoliceInterface = () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
-      
+
       if (user) {
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
           .single();
-          
+
         if (profileError) throw profileError;
         setCurrentUser(profile);
       }
@@ -65,7 +65,7 @@ const PoliceInterface = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const citizensData = await citizenAPI.getCitizens();
       setCitizens(citizensData);
     } catch (error) {
@@ -77,6 +77,7 @@ const PoliceInterface = () => {
   };
 
   // Initialize chat with a citizen
+  // Enhanced startChat function with better real-time handling
   const startChat = async (citizen) => {
     if (!currentUser) {
       setError('User not authenticated');
@@ -100,55 +101,148 @@ const PoliceInterface = () => {
       await chatAPI.markMessagesAsRead(conversation.id, currentUser.id);
 
       // Subscribe to real-time messages
-      const unsubscribe = chatAPI.subscribeToMessages(conversation.id, (newMessage) => {
-        setMessages(prev => {
-          // Avoid duplicates
-          if (prev.some(msg => msg.id === newMessage.id)) {
-            return prev;
+      const channel = supabase
+        .channel(`conversation-${conversation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conversation.id}`
+          },
+          (payload) => {
+            const newMessage = payload.new;
+            setMessages(prev => {
+              // Avoid duplicates
+              if (prev.some(msg => msg.id === newMessage.id)) {
+                return prev;
+              }
+              return [...prev, newMessage];
+            });
           }
-          return [...prev, newMessage];
-        });
-      });
+        )
+        .subscribe();
 
-      // Clean up subscription when component unmounts or chat changes
-      return () => unsubscribe();
+      // Store channel reference for cleanup
+      setActiveChannel(channel);
+
+      // Clean up function
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
     } catch (error) {
       console.error('Error starting chat:', error);
       setError('Failed to start conversation');
     }
   };
 
-  // Send message
+  // Add state for active channel
+  const [activeChannel, setActiveChannel] = useState(null);
+
+  // Enhanced useEffect for cleanup
+  useEffect(() => {
+    return () => {
+      // Cleanup subscription when component unmounts
+      if (activeChannel) {
+        supabase.removeChannel(activeChannel);
+      }
+    };
+  }, [activeChannel]);
+
+  // Alternative: Direct Supabase subscription in useEffect
+  useEffect(() => {
+    let channel = null;
+
+    if (activeConversation) {
+      // Subscribe to real-time updates for the active conversation
+      channel = supabase
+        .channel(`messages-${activeConversation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${activeConversation.id}`
+          },
+          (payload) => {
+            const newMessage = payload.new;
+
+            // Only add if it's not from the current user (to avoid duplicates from sendMessage)
+            if (newMessage.sender_id !== currentUser?.id) {
+              setMessages(prev => {
+                if (prev.some(msg => msg.id === newMessage.id)) {
+                  return prev;
+                }
+                return [...prev, newMessage];
+              });
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    // Cleanup function
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [activeConversation, currentUser?.id]);
+
+  // Enhanced sendMessage function
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConversation || !currentUser || sendingMessage) return;
 
     try {
       setSendingMessage(true);
-      
+
+      // Create temporary message for immediate UI update
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        message: newMessage,
+        sender_id: currentUser.id,
+        conversation_id: activeConversation.id,
+        created_at: new Date().toISOString(),
+        isTemporary: true
+      };
+
+      // Add temporary message to UI
+      setMessages(prev => [...prev, tempMessage]);
+      setNewMessage('');
+
+      // Send message to server
       const sentMessage = await chatAPI.sendMessage(
         activeConversation.id,
         currentUser.id,
         newMessage
       );
 
-      // Add message to local state (will also be received via subscription)
-      setMessages(prev => {
-        // Avoid duplicates
-        if (prev.some(msg => msg.id === sentMessage.id)) {
-          return prev;
-        }
-        return [...prev, sentMessage];
-      });
+      // Replace temporary message with real message
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempMessage.id ? sentMessage : msg
+        )
+      );
 
-      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message');
+
+      // Remove temporary message on error
+      setMessages(prev =>
+        prev.filter(msg => msg.id !== tempMessage.id)
+      );
+
+      // Restore message in input
+      setNewMessage(newMessage);
     } finally {
       setSendingMessage(false);
     }
   };
-
   // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -165,12 +259,12 @@ const PoliceInterface = () => {
   const filteredCitizens = citizens.filter(citizen => {
     const fullName = `${citizen.first_name || ''} ${citizen.last_name || ''}`.toLowerCase();
     const searchLower = searchTerm.toLowerCase();
-    
+
     return fullName.includes(searchLower) ||
-           (citizen.email && citizen.email.toLowerCase().includes(searchLower)) ||
-           (citizen.nationality && citizen.nationality.toLowerCase().includes(searchLower)) ||
-           (citizen.destination && citizen.destination.toLowerCase().includes(searchLower)) ||
-           (citizen.digital_id && citizen.digital_id.toLowerCase().includes(searchLower));
+      (citizen.email && citizen.email.toLowerCase().includes(searchLower)) ||
+      (citizen.nationality && citizen.nationality.toLowerCase().includes(searchLower)) ||
+      (citizen.destination && citizen.destination.toLowerCase().includes(searchLower)) ||
+      (citizen.digital_id && citizen.digital_id.toLowerCase().includes(searchLower));
   });
 
   const refreshCitizens = () => {
@@ -192,8 +286,8 @@ const PoliceInterface = () => {
   };
 
   const isPoliceMessage = (message) => {
-    return message.sender_id === currentUser?.id || 
-           (message.sender && message.sender.role === 'police');
+    return message.sender_id === currentUser?.id ||
+      (message.sender && message.sender.role === 'police');
   };
 
   if (loading) {
@@ -254,7 +348,7 @@ const PoliceInterface = () => {
               <Clock className="w-5 h-5" />
             </button>
           </div>
-          
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -298,11 +392,10 @@ const PoliceInterface = () => {
                 <div
                   key={citizen.id}
                   onClick={() => startChat(citizen)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    activeChat?.id === citizen.id
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${activeChat?.id === citizen.id
                       ? 'bg-blue-50 border-l-4 border-blue-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -316,9 +409,9 @@ const PoliceInterface = () => {
                           <AlertCircle className="text-yellow-500 w-4 h-4 flex-shrink-0" />
                         )}
                       </div>
-                      
+
                       <p className="text-sm text-gray-600 truncate">{citizen.email || 'No email'}</p>
-                      
+
                       <div className="flex items-center space-x-4 mt-2">
                         <div className="flex items-center space-x-1">
                           <MapPin className="text-gray-400 w-3 h-3" />
@@ -331,7 +424,7 @@ const PoliceInterface = () => {
                           </span>
                         </div>
                       </div>
-                      
+
                       {citizen.digital_id && (
                         <div className="mt-1">
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -340,13 +433,12 @@ const PoliceInterface = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex flex-col items-end space-y-1">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        citizen.onboarded
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${citizen.onboarded
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
-                      }`}>
+                        }`}>
                         {citizen.onboarded ? 'Active' : 'Pending'}
                       </span>
                       {citizen.nationality && (
@@ -393,7 +485,7 @@ const PoliceInterface = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                     <Phone className="w-5 h-5" />
@@ -423,22 +515,19 @@ const PoliceInterface = () => {
                 messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
-                      isPoliceMessage(message) ? 'justify-end' : 'justify-start'
-                    }`}
+                    className={`flex ${isPoliceMessage(message) ? 'justify-end' : 'justify-start'
+                      }`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        isPoliceMessage(message)
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isPoliceMessage(message)
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 text-gray-900'
-                      }`}
+                        }`}
                     >
                       <p className="text-sm">{message.message}</p>
                       <p
-                        className={`text-xs mt-1 ${
-                          isPoliceMessage(message) ? 'text-blue-100' : 'text-gray-500'
-                        }`}
+                        className={`text-xs mt-1 ${isPoliceMessage(message) ? 'text-blue-100' : 'text-gray-500'
+                          }`}
                       >
                         {formatTime(message.created_at)}
                       </p>

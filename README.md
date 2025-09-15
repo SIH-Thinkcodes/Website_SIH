@@ -1,12 +1,36 @@
-# React + Vite
+# SIH TEAM THINKODES
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is under development.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<!-- ### Key Features:
 
-## Expanding the ESLint configuration
+*   **Complete FIR Management:**
+    *   **Creation:** Intuitive forms for generating new FIRs with robust validation.
+    *   **Viewing:** Detailed display of FIR information.
+    *   **Editing:** Functionality to update FIR details and status.
+    *   **Search & Filter:** Advanced search capabilities by FIR number, complainant name, incident description, and filtering by status, crime type, and date range.
+*   **Role-Based Access Control (RBAC):**
+    *   **Police Officers:** Can create, view, and edit only their own filed FIRs.
+    *   **Administrators:** Have full access to view and manage all FIRs across the system.
+*   **Comprehensive Data Fields:** Includes all necessary fields for complainant information, incident details, additional evidence, and status tracking.
+*   **Real-time Updates:** Designed for efficient data handling and real-time search results.
+*   **Secure & Scalable:** Utilizes Supabase for a robust backend, including Row Level Security (RLS) to ensure data privacy and integrity.
+*   **Modern User Interface:** A responsive and intuitive design that integrates seamlessly with existing website themes.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Technologies Used:
+
+*   **Frontend:** React, Next.js, Tailwind CSS
+*   **Backend:** Supabase (PostgreSQL, Authentication, RLS)
+*   **Deployment:** Vercel (for frontend), Supabase (for backend)
+
+### Current Status:
+
+The core database schema for `fir_reports` is established with RLS policies implemented. Frontend development is underway, focusing on the FIR creation, viewing, and editing interfaces, along with search and filtering functionalities.
+
+### Future Enhancements:
+
+*   Integration with other law enforcement systems.
+*   Advanced reporting and analytics.
+*   Mobile application support.
+*   AI-powered incident analysis. -->

@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { FileText, Plus, Search, Filter, Eye, Edit, CheckCircle, Clock, AlertCircle, User, MapPin, Calendar, Phone, Mail, Save, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { firAPI } from '../../utils/supabase'
+import { jsPDF } from 'jspdf'
+import html2canvas from 'html2canvas'
+import templateHtmlRaw from '../../templates/FIRTemplate.html?raw'
 
 const FIRGenerator = () => {
   const { profile } = useAuth()
@@ -47,11 +50,7 @@ const FIRGenerator = () => {
     { value: 'rejected', label: 'Rejected', color: 'red' }
   ]
 
-  useEffect(() => {
-    loadFIRs()
-  }, [])
-
-  const loadFIRs = async () => {
+  const loadFIRs = useCallback(async () => {
     setLoading(true)
     try {
       let data
@@ -66,7 +65,11 @@ const FIRGenerator = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [profile])
+
+  useEffect(() => {
+    loadFIRs()
+  }, [loadFIRs])
 
   const handleSearch = async () => {
     setLoading(true)
@@ -114,7 +117,12 @@ const FIRGenerator = () => {
         created_at: new Date().toISOString()
       }
 
-      await firAPI.createFIR(firData)
+      const created = await firAPI.createFIR(firData)
+      try {
+        await generateFIRPdf(created)
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError)
+      }
       setSuccessMessage('FIR created successfully!')
       setCurrentView('list')
       loadFIRs()
@@ -208,6 +216,166 @@ const FIRGenerator = () => {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const generateFIRPdf = async (fir) => {
+    try {
+      // Create a temporary container for the template
+      const templateContainer = document.createElement('div')
+      templateContainer.style.position = 'absolute'
+      templateContainer.style.left = '-9999px'
+      templateContainer.style.top = '0'
+      templateContainer.style.width = '800px'
+      // Build lightweight SVG assets on-the-fly (no external files needed)
+      const logoSvg = `
+        <svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
+          <defs>
+            <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+              <stop offset='0%' stop-color='#1e3a8a'/>
+              <stop offset='100%' stop-color='#2563eb'/>
+            </linearGradient>
+          </defs>
+          <circle cx='48' cy='48' r='46' fill='url(#g)' stroke='#0f172a' stroke-width='2'/>
+          <text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='Times New Roman, serif' font-size='48' font-weight='700' fill='white'>P</text>
+          <circle cx='48' cy='48' r='46' fill='none' stroke='white' stroke-opacity='0.25' stroke-width='4'/>
+        </svg>`
+      const watermarkSvg = `
+        <svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'>
+          <defs>
+            <linearGradient id='wg' x1='0' y1='0' x2='1' y2='1'>
+              <stop offset='0%' stop-color='#1e40af'/>
+              <stop offset='100%' stop-color='#60a5fa'/>
+            </linearGradient>
+          </defs>
+          <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Times New Roman, serif' font-size='220' font-weight='700' fill='url(#wg)' fill-opacity='0.15' letter-spacing='8'>POLICE</text>
+        </svg>`
+      const logoUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(logoSvg)}`
+      const watermarkUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(watermarkSvg)}`
+      // Host a container that overlays watermark/logo and injects the template HTML inside without modifying it
+      templateContainer.innerHTML = `
+        <div style="font-family: 'Times New Roman', serif; margin: 0; padding: 20px; background: white; font-size: 12px; line-height: 1.4;">
+          <div id="fir-template-wrapper" style="max-width: 800px; margin: 0 auto; border: none; padding: 0; position: relative; overflow: hidden;">
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+              <img src="${watermarkUrl}" alt="Watermark" style="opacity:0.08; transform: rotate(-20deg); width: 600px; height: auto;" />
+            </div>
+            <div id="fir-template-host" style="position: relative; z-index: 1;"></div>
+          </div>
+        </div>
+      `
+
+      // Inject the raw template HTML into the host without altering its structure
+      const host = templateContainer.querySelector('#fir-template-host')
+      host.innerHTML = templateHtmlRaw
+
+      // Populate fields by ID to keep alignment with the untouched template
+      const setText = (id, value) => {
+        const el = host.querySelector(`#${id}`)
+        if (el) el.textContent = value || ''
+      }
+
+      // Inject logo into the template's government seal placeholder ('.logo')
+      const seal = host.querySelector('.logo')
+      if (seal) {
+        seal.innerHTML = ''
+        const img = document.createElement('img')
+        img.src = logoUrl
+        img.alt = 'Government Seal'
+        img.style.width = '52px'
+        img.style.height = '52px'
+        img.style.objectFit = 'contain'
+        // soften the original placeholder styles for a clean embed
+        seal.style.border = 'none'
+        seal.style.background = 'transparent'
+        seal.appendChild(img)
+      }
+
+      setText('district', fir.officer_station)
+      setText('police-station', fir.officer_station)
+      setText('year', String(new Date().getFullYear()))
+      setText('fir-number', fir.fir_number)
+      setText('fir-date', formatDate(fir.created_at || new Date().toISOString()))
+
+      // Section 2
+      setText('act1', 'IPC')
+      setText('sections1', fir.crime_type)
+
+      // Section 3
+      setText('occurrence-day', fir.incident_date ? new Date(fir.incident_date).toLocaleDateString('en-IN', { weekday: 'long' }) : '')
+      setText('occurrence-date', fir.incident_date ? formatDate(fir.incident_date) : '')
+      setText('occurrence-time', fir.incident_time)
+      setText('info-received-date', formatDate(fir.created_at || new Date().toISOString()))
+      setText('info-received-time', new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))
+      setText('diary-entry', fir.fir_number)
+      setText('diary-time', new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))
+
+      // Section 4
+      setText('info-type', 'Written')
+
+      // Section 5
+      setText('direction-distance', '')
+      setText('beat-number', '')
+      setText('incident-address', fir.incident_location)
+      setText('other-ps', '')
+      setText('other-district', '')
+
+      // Section 6
+      setText('complainant-name', fir.complainant_name)
+      setText('father-husband-name', '')
+      setText('birth-date', '')
+      setText('nationality', 'Indian')
+      setText('passport-no', '')
+      setText('passport-issue-date', '')
+      setText('passport-issue-place', '')
+      setText('occupation', '')
+      setText('complainant-address', fir.complainant_address)
+
+      // Section 7
+      const accused = host.querySelector('#accused-details')
+      if (accused) accused.textContent = fir.witness_details || ''
+
+      // Section 8
+      const delay = host.querySelector('#delay-reasons')
+      if (delay) delay.textContent = 'Not applicable'
+
+      // Section 9
+      const props = host.querySelector('#properties-involved')
+      if (props) props.textContent = fir.evidence_description || ''
+      
+      document.body.appendChild(templateContainer)
+      
+      // Convert to canvas and then to PDF
+      const canvas = await html2canvas(templateContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      })
+      
+      document.body.removeChild(templateContainer)
+      
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgWidth = 210
+      const pageHeight = 295
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      
+      let position = 0
+      
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+      
+      const filename = `FIR-${fir.fir_number || Date.now()}.pdf`
+      pdf.save(filename)
+    } catch (err) {
+      console.error('Failed to generate PDF', err)
+    }
   }
 
   if (currentView === 'create' || currentView === 'edit') {
@@ -511,6 +679,12 @@ const FIRGenerator = () => {
               </div>
               <div className="flex space-x-2">
                 <button
+                  onClick={async () => await generateFIRPdf(selectedFIR)}
+                  className="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => handleEditFIR(selectedFIR)}
                   className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100 transition-colors"
                 >
@@ -761,6 +935,13 @@ const FIRGenerator = () => {
                       className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={async () => await generateFIRPdf(fir)}
+                      className="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+                      title="Download PDF"
+                    >
+                      <FileText className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEditFIR(fir)}

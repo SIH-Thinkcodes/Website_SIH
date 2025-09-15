@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin } from 'lucide-react'
+import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin, User } from 'lucide-react'
 
 // Import page components
 import TouristSearch from './TouristSearch'
@@ -43,45 +43,61 @@ const renderPage = () => {
 }
 
   const DashboardHome = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-600">Active Cases</p>
-            <p className="text-2xl font-bold text-blue-600">0</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-blue-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600">Active Cases</p>
+              <p className="text-xl lg:text-2xl font-bold text-blue-600">0</p>
+            </div>
+            <Shield className="text-blue-500 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
-          <Shield className="text-blue-500 w-8 h-8" />
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-600">Reports Filed</p>
-            <p className="text-2xl font-bold text-green-600">0</p>
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-blue-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600">Reports Filed</p>
+              <p className="text-xl lg:text-2xl font-bold text-green-600">0</p>
+            </div>
+            <CheckCircle className="text-green-500 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
-          <CheckCircle className="text-green-500 w-8 h-8" />
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-slate-600">Pending Tasks</p>
-            <p className="text-2xl font-bold text-orange-600">0</p>
+        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6 border border-blue-100 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-600">Pending Tasks</p>
+              <p className="text-xl lg:text-2xl font-bold text-orange-600">0</p>
+            </div>
+            <AlertCircle className="text-orange-500 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
-          <AlertCircle className="text-orange-500 w-8 h-8" />
         </div>
       </div>
 
       {/* Welcome Card */}
-      <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-blue-100 p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4">Welcome to Police Portal</h2>
-        <p className="text-slate-600">
+      <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6 lg:p-8 text-center max-w-4xl mx-auto w-full">
+        <h2 className="text-lg lg:text-xl font-bold text-slate-800 mb-2">Welcome to Police Portal</h2>
+        <p className="text-sm lg:text-base text-slate-600 mb-4 lg:mb-6">
           Your account has been verified and you now have full access to all police portal features.
           Use the navigation menu to access case management, reports, and other tools.
         </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 text-left">
+          <div className="bg-slate-50 rounded-lg p-3 lg:p-4">
+            <p className="text-xs text-slate-500">Officer</p>
+            <p className="font-medium text-slate-800 text-sm lg:text-base">{profile?.name || '—'}</p>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-3 lg:p-4">
+            <p className="text-xs text-slate-500">Badge / Station</p>
+            <p className="font-medium text-slate-800 text-sm lg:text-base">{profile?.badge_number || '—'}{profile?.station ? ` · ${profile.station}` : ''}</p>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-3 lg:p-4 sm:col-span-2 lg:col-span-1">
+            <p className="text-xs text-slate-500">Today</p>
+            <p className="font-medium text-slate-800 text-sm lg:text-base">{new Date().toLocaleDateString()} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -171,129 +187,117 @@ const renderPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Compact Sticky Header with Enhanced Blur */}
-      <header className="bg-white/90 backdrop-blur-xl shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center">
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Fixed Left Sidebar */}
+      <aside className={`fixed left-0 top-0 h-full w-64 bg-white/95 backdrop-blur-xl shadow-lg border-r border-slate-200/50 z-40 transform transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        {/* Sidebar Header */}
+        <div className="p-6 border-b border-slate-100/50">
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100/70 transition-colors"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-            <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
-              <Shield className="text-white w-5 h-5" />
+            <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
+              <Shield className="text-white w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800">Police Officer Portal</h1>
-              <p className="text-xs text-slate-600 leading-tight">Officer Dashboard</p>
+              <h1 className="text-lg font-bold text-slate-800">Police Portal</h1>
+              <p className="text-xs text-slate-600">Officer Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <p className="font-semibold text-slate-800 text-sm">{profile?.name}</p>
-              <div className="flex items-center justify-end">
+        </div>
+
+        {/* Sidebar Navigation */}
+        <nav className="p-4 space-y-2">
+          {navigationItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                onClick={() => setCurrentPage(item.id)}
+                className={`group w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 transform ${
+                  currentPage === item.id
+                    ? 'bg-blue-100/90 text-blue-700 shadow-sm scale-[1.02]'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/80 hover:scale-[1.02]'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                <span>{item.name}</span>
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-100/50">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-slate-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-slate-800 text-sm truncate">{profile?.name}</p>
+              <div className="flex items-center">
                 <div className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
                   <CheckCircle className="w-3 h-3 mr-1" />
-                  Verified Officer
+                  Verified
                 </div>
               </div>
             </div>
-            <button
-              onClick={onLogout}
-              className="bg-red-50 text-red-600 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
+          <button
+            onClick={onLogout}
+            className="w-full bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center space-x-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
         </div>
+      </aside>
 
-        {/* Compact Navigation Bar */}
-        <nav className="border-t border-slate-100/50">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex space-x-1 overflow-x-auto py-1.5 scrollbar-hide">
-              {navigationItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentPage(item.id)}
-                    className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-                      currentPage === item.id
-                        ? 'bg-blue-100/80 text-blue-700 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/70'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="hidden sm:block">{item.name}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      {/* Enhanced Mobile Sidebar */}
+      {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-30 lg:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-64 bg-white/95 backdrop-blur-xl shadow-xl border-r border-slate-200">
-            <div className="p-4 border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-slate-800">Navigation</h2>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-1 rounded hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <nav className="p-4">
-              <div className="space-y-1">
-                {navigationItems.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentPage(item.id)
-                        setSidebarOpen(false)
-                      }}
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
-                        currentPage === item.id
-                          ? 'bg-blue-100 text-blue-700 shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span>{item.name}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </nav>
-          </div>
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {renderPage()}
-      </main>
+      {/* Mobile Sidebar Close Button */}
+      {sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="fixed top-4 right-4 z-50 lg:hidden p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-slate-200"
+        >
+          <X className="w-5 h-5 text-slate-600" />
+        </button>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 lg:ml-64">
+        {/* Top Header */}
+        <header className="bg-white/90 backdrop-blur-xl shadow-sm border-b border-blue-100/50 sticky top-0 z-20">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100/70 transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <h2 className="text-lg font-semibold text-slate-800">Welcome to Police Portal</h2>
+            </div>
+            <div className="hidden sm:flex items-center space-x-4 text-sm text-slate-600">
+              <span>{new Date().toLocaleDateString()}</span>
+              <span>•</span>
+              <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="p-4 lg:p-6">
+          {renderPage()}
+        </main>
+      </div>
       
 
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   )
 }

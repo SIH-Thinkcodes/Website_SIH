@@ -15,125 +15,140 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 export const authAPI = {
   // Sign up user
   signUp: async (email, password, userData) => {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: userData.name,
-          role: userData.role
-        }
-      }
-    })
-    
-    if (authError) {
-      if (authError.message.includes('User already registered')) {
-        throw new Error('An account with this email already exists')
-      }
-      if (authError.message.includes('rate limit')) {
-        throw new Error('Too many signup attempts. Please try again later.')
-      }
-      throw authError
-    }
-
-    if (!authData.user) {
-      throw new Error('Failed to create user account')
-    }
-
-    // Wait for the trigger to complete
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Check the automatically created profile
-    const { data: autoCreatedProfile } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single()
-
-    if (autoCreatedProfile) {
-      // Check if the auto-created profile has all the correct data
-      const needsUpdate = (
-        autoCreatedProfile.name !== userData.name ||
-        autoCreatedProfile.role !== userData.role ||
-        autoCreatedProfile.mobile_number !== userData.mobile_number ||
-        autoCreatedProfile.badge_number !== userData.badge_number ||
-        autoCreatedProfile.station !== userData.station ||
-        autoCreatedProfile.official_id_type !== userData.official_id_type ||
-        autoCreatedProfile.is_verified !== (userData.is_verified || false)
-      )
-
-      if (needsUpdate) {
-        const { error: updateError } = await supabase
-          .from('user_profiles')
-          .update({
-            name: userData.name,
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: userData.name,
             role: userData.role,
-            mobile_number: userData.mobile_number || null,
-            badge_number: userData.badge_number || null,
-            station: userData.station || null,
-            official_id_type: userData.official_id_type || null,
+            mobile_number: userData.mobile_number,
+            badge_number: userData.badge_number,
+            station: userData.station,
+            unit: userData.unit,
+            official_id_type: userData.official_id_type,
+            official_id_number: userData.official_id_number,
             is_verified: userData.is_verified || false
-          })
-          .eq('id', authData.user.id)
+          }
+        }
+      })
+      
+      if (authError) {
+        console.error('Auth Error:', authError)
+        
+        if (authError.message.includes('User already registered')) {
+          throw new Error('An account with this email already exists')
+        }
+        if (authError.message.includes('rate limit')) {
+          throw new Error('Too many signup attempts. Please try again later.')
+        }
+        if (authError.message.includes('Invalid email')) {
+          throw new Error('Please enter a valid email address')
+        }
+        if (authError.message.includes('Password should be at least')) {
+          throw new Error('Password must be at least 6 characters long')
+        }
+        if (authError.message.includes('signup is disabled')) {
+          throw new Error('Account registration is currently disabled. Please contact support.')
+        }
+        
+        throw new Error(authError.message)
+      }
 
-        if (updateError) {
-          throw new Error('Failed to update user profile: ' + updateError.message)
+      if (!authData.user) {
+        throw new Error('Failed to create user account')
+      }
+
+      console.log('User created successfully:', authData.user.id)
+      
+      // Wait for the database trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
+      // Verify the profile was created
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile fetch error:', profileError)
+      }
+
+      if (!profile) {
+        // Fallback: manually create the profile
+        console.log('Creating profile manually...')
+        const profileData = {
+          id: authData.user.id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          mobile_number: userData.mobile_number || null,
+          badge_number: userData.badge_number || null,
+          station: userData.station || null,
+          unit: userData.unit || null,
+          official_id_type: userData.official_id_type || null,
+          official_id_number: userData.official_id_number || null,
+          official_id_image_url: null,
+          is_verified: userData.is_verified || false
+        }
+
+        const { error: insertError } = await supabase
+          .from('user_profiles')
+          .insert([profileData])
+
+        if (insertError) {
+          console.error('Manual profile creation failed:', insertError)
+          throw new Error('Failed to create user profile: ' + insertError.message)
         }
       }
-    } else {
-      // Fallback: manually insert the profile
-      const profileData = {
-        id: authData.user.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        mobile_number: userData.mobile_number || null,
-        badge_number: userData.badge_number || null,
-        station: userData.station || null,
-        official_id_type: userData.official_id_type || null,
-        official_id_image_url: userData.official_id_image_url || null,
-        is_verified: userData.is_verified || false
-      }
-
-      const { error: insertError } = await supabase
-        .from('user_profiles')
-        .insert([profileData])
-
-      if (insertError) {
-        throw new Error('Failed to create user profile manually: ' + insertError.message)
-      }
+      
+      return authData
+    } catch (error) {
+      console.error('Signup process failed:', error)
+      throw error
     }
-    
-    return authData
   },
 
   // Sign in
   signIn: async (email, password) => {
-    // Clear any existing session first
-    await supabase.auth.signOut({ scope: 'local' })
-    
-    // Small delay to ensure cleanup
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        throw new Error('Invalid email or password')
+    try {
+      // Clear any existing session first
+      await supabase.auth.signOut({ scope: 'local' })
+      
+      // Small delay to ensure cleanup
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        console.error('Login error:', error)
+        
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password')
+        }
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the confirmation link before logging in')
+        }
+        if (error.message.includes('rate limit')) {
+          throw new Error('Too many login attempts. Please try again later.')
+        }
+        if (error.message.includes('signups not allowed')) {
+          throw new Error('Login is currently disabled. Please contact support.')
+        }
+        
+        throw new Error(error.message)
       }
-      if (error.message.includes('Email not confirmed')) {
-        throw new Error('Please check your email and click the confirmation link before logging in')
-      }
-      if (error.message.includes('rate limit')) {
-        throw new Error('Too many login attempts. Please try again later.')
-      }
+      
+      return data
+    } catch (error) {
+      console.error('Login process failed:', error)
       throw error
     }
-    
-    return data
   },
 
   // Sign out
@@ -169,6 +184,20 @@ export const authAPI = {
       .select('*')
       .eq('role', 'police')
       .eq('is_verified', false)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  // Get active officers (admin only)
+  getActiveOfficers: async () => {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('role', 'police')
+      .eq('is_verified', true)
+      .order('created_at', { ascending: false })
     
     if (error) throw error
     return data || []
@@ -176,12 +205,34 @@ export const authAPI = {
 
   // Verify officer (admin only)
   verifyOfficer: async (officerId) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('user_profiles')
       .update({ is_verified: true })
       .eq('id', officerId)
+      .select()
+      .single()
     
     if (error) throw error
+    return data
+  },
+
+  // Reject officer (admin only)
+  rejectOfficer: async (officerId, reason = null) => {
+    // You might want to create a separate table for rejected applications
+    // For now, we'll just delete the profile
+    const { error } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', officerId)
+    
+    if (error) throw error
+    
+    // Also delete the auth user
+    const { error: authError } = await supabase.auth.admin.deleteUser(officerId)
+    if (authError) {
+      console.error('Failed to delete auth user:', authError)
+      // Don't throw here as profile is already deleted
+    }
   },
 
   // Reset password
@@ -195,6 +246,51 @@ export const authAPI = {
         throw new Error('Too many reset attempts. Please try again later.')
       }
       throw error
+    }
+  }
+}
+
+// Storage helpers
+export const storageAPI = {
+  // Upload file to documents bucket
+  uploadDocument: async (file, path, userId) => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${userId}_${Date.now()}.${fileExt}`
+      const fullPath = `${path}/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .upload(fullPath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fullPath)
+
+      return publicUrl
+    } catch (error) {
+      console.error('Upload error:', error)
+      throw new Error('Failed to upload file: ' + error.message)
+    }
+  },
+
+  // Delete file from storage
+  deleteDocument: async (path) => {
+    try {
+      const { error } = await supabase.storage
+        .from('documents')
+        .remove([path])
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Delete error:', error)
+      throw new Error('Failed to delete file: ' + error.message)
     }
   }
 }

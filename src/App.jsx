@@ -99,8 +99,9 @@ function AppContent() {
 
   const handleSignup = async (email, password, userData) => {
     try {
-      await signup(email, password, userData)
+      const data = await signup(email, password, userData)
       setCurrentPage('login')
+      return data  // Return the auth data so Signup.jsx can access user.id
     } catch (error) {
       throw error
     }
@@ -128,6 +129,15 @@ function AppContent() {
       await loadAllOfficers()
     } catch (error) {
       console.error('Error approving officer:', error)
+    }
+  }
+
+  const handleRejectOfficer = async (officerId) => {
+    try {
+      await authAPI.rejectOfficer(officerId)
+      await loadAllOfficers()
+    } catch (error) {
+      console.error('Error rejecting officer:', error)
     }
   }
 
@@ -166,6 +176,7 @@ function AppContent() {
           profile={profile}
           onLogout={handleLogout}
           onApproveOfficer={handleApproveOfficer}
+          onRejectOfficer={handleRejectOfficer}
           pendingOfficers={pendingOfficers}
           activeOfficers={activeOfficers}
         />

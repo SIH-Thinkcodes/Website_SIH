@@ -269,6 +269,18 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const rejectOfficer = async (officerId) => {
+    try {
+      await authAPI.rejectOfficer(officerId)
+      // Refresh officer data if admin
+      if (profile?.role === 'admin') {
+        // You might want to emit an event or call a callback here
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -279,6 +291,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     loadProfile,
     retryProfileFetch,
+    rejectOfficer,
     isAdmin: profile?.role === 'admin',
     isPolice: profile?.role === 'police',
     isVerified: profile?.is_verified || false

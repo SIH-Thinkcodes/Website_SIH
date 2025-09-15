@@ -1,20 +1,54 @@
-import { createClient } from '@supabase/supabase-js'
+// src/utils/supabase.js
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Singleton Supabase clients
+let supabaseInstance = null;
+let supabaseAdminInstance = null;
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false
+const getSupabase = () => {
+  if (!supabaseInstance) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables');
+    }
+    
+    supabaseInstance = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
   }
-})
+  return supabaseInstance;
+};
+
+const getSupabaseAdmin = () => {
+  if (!supabaseAdminInstance) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    supabaseAdminInstance = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  }
+  return supabaseAdminInstance;
+};
+
+export const supabase = getSupabase();
+const supabaseAdmin = getSupabaseAdmin();
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://sih-tourist-safety-backend.onrender.com'; // Update with your Render URL
+const adminSecretKey = import.meta.env.VITE_ADMIN_SECRET_KEY; 
 
 // Auth helpers
 export const authAPI = {
   // Sign up user
-  signUp: async (email, password, userData) => {
+  async signUp(email, password, userData) {
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -29,56 +63,51 @@ export const authAPI = {
             unit: userData.unit,
             official_id_type: userData.official_id_type,
             official_id_number: userData.official_id_number,
-            is_verified: userData.is_verified || false
-          }
-        }
-      })
-      
+            is_verified: userData.is_verified || false,
+          },
+        },
+      });
+
       if (authError) {
-        console.error('Auth Error:', authError)
-        
-        if (authError.message.includes('User already registered')) {
-          throw new Error('An account with this email already exists')
+        console.error('Auth Error:', authError);
+        if (authError.code === 'user_already_exists') {
+          throw new Error('An account with this email already exists');
         }
-        if (authError.message.includes('rate limit')) {
-          throw new Error('Too many signup attempts. Please try again later.')
+        if (authError.code === 'rate_limit_exceeded') {
+          throw new Error('Too many signup attempts. Please try again later.');
         }
         if (authError.message.includes('Invalid email')) {
-          throw new Error('Please enter a valid email address')
+          throw new Error('Please enter a valid email address');
         }
         if (authError.message.includes('Password should be at least')) {
-          throw new Error('Password must be at least 6 characters long')
+          throw new Error('Password must be at least 6 characters long');
         }
         if (authError.message.includes('signup is disabled')) {
-          throw new Error('Account registration is currently disabled. Please contact support.')
+          throw new Error('Account registration is currently disabled. Please contact support.');
         }
-        
-        throw new Error(authError.message)
+        throw new Error(authError.message);
       }
 
       if (!authData.user) {
-        throw new Error('Failed to create user account')
+        throw new Error('Failed to create user account');
       }
 
-      console.log('User created successfully:', authData.user.id)
-      
-      // Wait for the database trigger to complete
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      console.log('User created successfully:', authData.user.id);
 
       // Verify the profile was created
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', authData.user.id)
-        .single()
+        .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Profile fetch error:', profileError)
+        console.error('Profile fetch error:', profileError);
+        throw new Error('Failed to verify user profile: ' + profileError.message);
       }
 
       if (!profile) {
-        // Fallback: manually create the profile
-        console.log('Creating profile manually...')
+        console.log('Creating profile manually...');
         const profileData = {
           id: authData.user.id,
           email: userData.email,
@@ -91,252 +120,457 @@ export const authAPI = {
           official_id_type: userData.official_id_type || null,
           official_id_number: userData.official_id_number || null,
           official_id_image_url: null,
-          is_verified: userData.is_verified || false
-        }
+          is_verified: userData.is_verified || false,
+        };
 
         const { error: insertError } = await supabase
           .from('user_profiles')
-          .insert([profileData])
+          .insert([profileData]);
 
         if (insertError) {
-          console.error('Manual profile creation failed:', insertError)
-          throw new Error('Failed to create user profile: ' + insertError.message)
+          console.error('Manual profile creation failed:', insertError);
+          throw new Error('Failed to create user profile: ' + insertError.message);
         }
       }
-      
-      return authData
+
+      return authData;
     } catch (error) {
-      console.error('Signup process failed:', error)
-      throw error
+      console.error('Signup process failed:', error);
+      throw error;
     }
   },
 
   // Sign in
-  signIn: async (email, password) => {
+  async signIn(email, password) {
     try {
-      // Clear any existing session first
-      await supabase.auth.signOut({ scope: 'local' })
-      
-      // Small delay to ensure cleanup
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
+      await supabase.auth.signOut({ scope: 'local' });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-      })
-      
+      });
+
       if (error) {
-        console.error('Login error:', error)
-        
-        if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password')
+        console.error('Login error:', error);
+        if (error.code === 'invalid_credentials') {
+          throw new Error('Invalid email or password');
         }
-        if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before logging in')
+        if (error.code === 'email_not_confirmed') {
+          throw new Error('Please check your email and click the confirmation link before logging in');
         }
-        if (error.message.includes('rate limit')) {
-          throw new Error('Too many login attempts. Please try again later.')
+        if (error.code === 'rate_limit_exceeded') {
+          throw new Error('Too many login attempts. Please try again later.');
         }
         if (error.message.includes('signups not allowed')) {
-          throw new Error('Login is currently disabled. Please contact support.')
+          throw new Error('Login is currently disabled. Please contact support.');
         }
-        
-        throw new Error(error.message)
+        throw new Error(error.message);
       }
-      
-      return data
+
+      return data;
     } catch (error) {
-      console.error('Login process failed:', error)
-      throw error
+      console.error('Login process failed:', error);
+      throw error;
     }
   },
 
   // Sign out
-  signOut: async () => {
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
+  async signOut() {
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) {
-      throw error
+      throw error;
     }
   },
 
   // Get current user profile
-  getProfile: async (userId) => {
+  async getProfile(userId) {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
-      .single()
-    
+      .single();
+
     if (error) {
       if (error.code === 'PGRST116') {
-        throw new Error('User profile not found')
+        throw new Error('User profile not found');
       }
-      throw error
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to user profile');
+      }
+      throw error;
     }
-    
-    return data
+
+    return data;
   },
 
   // Get pending officers (admin only)
-  getPendingOfficers: async () => {
+  async getPendingOfficers() {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('role', 'police')
       .eq('is_verified', false)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to pending officers');
+      }
+      throw error;
+    }
+    return data || [];
   },
 
   // Get active officers (admin only)
-  getActiveOfficers: async () => {
+  async getActiveOfficers() {
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('role', 'police')
       .eq('is_verified', true)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to active officers');
+      }
+      throw error;
+    }
+    return data || [];
   },
 
   // Verify officer (admin only)
-  verifyOfficer: async (officerId) => {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update({ is_verified: true })
-      .eq('id', officerId)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+  async verifyOfficer(officerId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({ is_verified: true })
+        .eq('id', officerId)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST301') {
+          throw new Error('Unauthorized access to verify officer');
+        }
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error verifying officer:', error);
+      throw error;
+    }
   },
 
   // Reject officer (admin only)
-  rejectOfficer: async (officerId, reason = null) => {
-    // You might want to create a separate table for rejected applications
-    // For now, we'll just delete the profile
-    const { error } = await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('id', officerId)
-    
-    if (error) throw error
-    
-    // Also delete the auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(officerId)
-    if (authError) {
-      console.error('Failed to delete auth user:', authError)
-      // Don't throw here as profile is already deleted
+  async rejectOfficer(officerId, reason = null) {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', officerId);
+
+      if (error) {
+        if (error.code === 'PGRST301') {
+          throw new Error('Unauthorized access to reject officer');
+        }
+        throw error;
+      }
+
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(officerId);
+      if (authError) {
+        console.error('Failed to delete auth user:', authError);
+      }
+    } catch (error) {
+      console.error('Error rejecting officer:', error);
+      throw error;
     }
   },
 
   // Reset password
-  resetPassword: async (email) => {
+  async resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    })
-    
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
     if (error) {
-      if (error.message.includes('rate limit')) {
-        throw new Error('Too many reset attempts. Please try again later.')
+      if (error.code === 'rate_limit_exceeded') {
+        throw new Error('Too many reset attempts. Please try again later.');
       }
-      throw error
+      throw error;
     }
-  }
-}
+  },
+};
+
+// Traveller API for mobile app users
+export const travellerAPI = {
+  // Get pending travellers (admin only)
+  async getPendingTravellers() {
+    const { data, error } = await supabase
+      .from('traveller_profiles')
+      .select('*')
+      .eq('is_verified', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to pending travellers');
+      }
+      throw error;
+    }
+    return data || [];
+  },
+
+  // Get verified travellers (admin only)
+  async getVerifiedTravellers() {
+    const { data, error } = await supabase
+      .from('traveller_profiles')
+      .select('*')
+      .eq('is_verified', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to verified travellers');
+      }
+      throw error;
+    }
+    return data || [];
+  },
+
+  // Verify traveller and generate blockchain digital ID (admin only)
+  async verifyTraveller(travellerId) {
+    try {
+      const { data: traveller, error: fetchError } = await supabase
+        .from('traveller_profiles')
+        .select('*')
+        .eq('id', travellerId)
+        .single();
+
+      if (fetchError || !traveller) {
+        throw new Error('Traveller not found');
+      }
+
+      const response = await fetch(`${backendUrl}/api/traveller/update-digital-id/${travellerId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminSecretKey}`,
+        },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to generate digital ID');
+      }
+
+      const { data, error } = await supabase
+        .from('traveller_profiles')
+        .update({
+          is_verified: true,
+          digital_id: result.traveller.digital_id,
+          blockchain_wallet_address: result.traveller.blockchain_wallet_address,
+          blockchain_transaction_hash: result.traveller.blockchain_transaction_hash,
+        })
+        .eq('id', travellerId)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST301') {
+          throw new Error('Unauthorized access to verify traveller');
+        }
+        throw error;
+      }
+
+      console.log('Traveller verified with blockchain digital ID:', result);
+      return data;
+    } catch (error) {
+      console.error('Error verifying traveller:', error);
+      throw error;
+    }
+  },
+
+  // Reject traveller (admin only)
+  async rejectTraveller(travellerId, reason = null) {
+    try {
+      const response = await fetch(`${backendUrl}/api/traveller/reject/${travellerId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminSecretKey}`,
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || 'Failed to reject traveller');
+      }
+
+      const { error } = await supabase
+        .from('traveller_profiles')
+        .delete()
+        .eq('id', travellerId);
+
+      if (error) {
+        if (error.code === 'PGRST301') {
+          throw new Error('Unauthorized access to reject traveller');
+        }
+        throw error;
+      }
+      console.log('Traveller profile deleted:', travellerId);
+    } catch (error) {
+      console.error('Error rejecting traveller:', error);
+      throw error;
+    }
+  },
+
+  // Search traveller by digital ID
+  async searchByDigitalId(digitalId) {
+    try {
+      const response = await fetch(`${backendUrl}/api/traveller/by-digital-id/${digitalId}`, {
+        headers: {
+          'Authorization': `Bearer ${adminSecretKey}`,
+        },
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Traveller not found');
+      }
+
+      return result.traveller;
+    } catch (error) {
+      console.error('Error searching traveller:', error);
+      throw error;
+    }
+  },
+
+  // Get traveller by ID
+  async getTravellerById(travellerId) {
+    const { data, error } = await supabase
+      .from('traveller_profiles')
+      .select('*')
+      .eq('id', travellerId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('Traveller not found');
+      }
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to traveller profile');
+      }
+      throw error;
+    }
+
+    return data;
+  },
+};
 
 // Storage helpers
 export const storageAPI = {
   // Upload file to documents bucket
-  uploadDocument: async (file, path, userId) => {
+  async uploadDocument(file, path, userId) {
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${userId}_${Date.now()}.${fileExt}`
-      const fullPath = `${path}/${fileName}`
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}_${Date.now()}.${fileExt}`;
+      const fullPath = `${path}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(fullPath, file, {
           cacheControl: '3600',
-          upsert: false
-        })
+          upsert: false,
+        });
 
-      if (error) throw error
+      if (error) throw error;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
-        .getPublicUrl(fullPath)
+        .getPublicUrl(fullPath);
 
-      return publicUrl
+      return publicUrl;
     } catch (error) {
-      console.error('Upload error:', error)
-      throw new Error('Failed to upload file: ' + error.message)
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload file: ' + error.message);
     }
   },
 
   // Delete file from storage
-  deleteDocument: async (path) => {
+  async deleteDocument(path) {
     try {
       const { error } = await supabase.storage
         .from('documents')
-        .remove([path])
+        .remove([path]);
 
-      if (error) throw error
+      if (error) throw error;
     } catch (error) {
-      console.error('Delete error:', error)
-      throw new Error('Failed to delete file: ' + error.message)
+      console.error('Delete error:', error);
+      throw new Error('Failed to delete file: ' + error.message);
     }
-  }
-}
+  },
+};
 
 // FIR (First Information Report) API
 export const firAPI = {
   // Create a new FIR
-  createFIR: async (firData) => {
+  async createFIR(firData) {
     const { data, error } = await supabase
       .from('fir_reports')
       .insert([firData])
       .select()
-      .single()
-    
-    if (error) throw error
-    return data
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to create FIR');
+      }
+      throw error;
+    }
+    return data;
   },
 
   // Get all FIRs for a police officer
-  getFIRsByOfficer: async (officerId) => {
+  async getFIRsByOfficer(officerId) {
     const { data, error } = await supabase
       .from('fir_reports')
       .select('*')
       .eq('officer_id', officerId)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to officer FIRs');
+      }
+      throw error;
+    }
+    return data || [];
   },
 
   // Get all FIRs (admin only)
-  getAllFIRs: async () => {
+  async getAllFIRs() {
     const { data, error } = await supabase
       .from('fir_reports')
       .select(`
         *,
         officer:user_profiles!fir_reports_officer_id_fkey(name, badge_number, station)
       `)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to all FIRs');
+      }
+      throw error;
+    }
+    return data || [];
   },
 
   // Get FIR by ID
-  getFIRById: async (firId) => {
+  async getFIRById(firId) {
     const { data, error } = await supabase
       .from('fir_reports')
       .select(`
@@ -344,59 +578,75 @@ export const firAPI = {
         officer:user_profiles!fir_reports_officer_id_fkey(name, badge_number, station)
       `)
       .eq('id', firId)
-      .single()
-    
-    if (error) throw error
-    return data
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error('FIR not found');
+      }
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to FIR');
+      }
+      throw error;
+    }
+    return data;
   },
 
   // Update FIR status
-  updateFIRStatus: async (firId, status, notes = null) => {
-    const updateData = { status }
-    if (notes) updateData.notes = notes
-    
+  async updateFIRStatus(firId, status, notes = null) {
+    const updateData = { status };
+    if (notes) updateData.notes = notes;
+
     const { data, error } = await supabase
       .from('fir_reports')
       .update(updateData)
       .eq('id', firId)
       .select()
-      .single()
-    
-    if (error) throw error
-    return data
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to update FIR');
+      }
+      throw error;
+    }
+    return data;
   },
 
   // Search FIRs
-  searchFIRs: async (searchTerm, filters = {}) => {
+  async searchFIRs(searchTerm, filters = {}) {
     let query = supabase
       .from('fir_reports')
       .select(`
         *,
         officer:user_profiles!fir_reports_officer_id_fkey(name, badge_number, station)
-      `)
+      `);
 
-    // Apply search term
     if (searchTerm) {
-      query = query.or(`fir_number.ilike.%${searchTerm}%,complainant_name.ilike.%${searchTerm}%,incident_description.ilike.%${searchTerm}%`)
+      query = query.or(`fir_number.ilike.%${searchTerm}%,complainant_name.ilike.%${searchTerm}%,incident_description.ilike.%${searchTerm}%`);
     }
 
-    // Apply filters
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status);
     }
     if (filters.crime_type) {
-      query = query.eq('crime_type', filters.crime_type)
+      query = query.eq('crime_type', filters.crime_type);
     }
     if (filters.date_from) {
-      query = query.gte('incident_date', filters.date_from)
+      query = query.gte('incident_date', filters.date_from);
     }
     if (filters.date_to) {
-      query = query.lte('incident_date', filters.date_to)
+      query = query.lte('incident_date', filters.date_to);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
-  }
-}
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      if (error.code === 'PGRST301') {
+        throw new Error('Unauthorized access to search FIRs');
+      }
+      throw error;
+    }
+    return data || [];
+  },
+};

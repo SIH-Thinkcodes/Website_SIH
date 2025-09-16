@@ -497,7 +497,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 <div>
                   <p className="text-sm text-white/80">Active Cases</p>
                   {statsLoading ? (
-                    <div className="animate-pulse bg-slate-200 h-6 w-12 rounded"></div>
+                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
                   ) : (
                     <p className="text-xl lg:text-2xl font-bold text-white">
                       {statsError ? '—' : dashboardStats.activeCases}
@@ -835,7 +835,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <User className="w-4 h-4 mr-2" />
                   Personal Information
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div>
                     <label className="text-sm text-white/80">Full Name</label>
                     <p className="font-medium text-white">{selectedOfficer.name}</p>
@@ -865,7 +865,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <BadgeIcon className="w-4 h-4 mr-2" />
                   Professional Details
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div>
                     <label className="text-sm text-white/80">Badge Number</label>
                     <p className="font-medium text-white">{selectedOfficer.badge_number || 'N/A'}</p>
@@ -898,7 +898,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <FileText className="w-4 h-4 mr-2" />
                   ID Verification
                 </h4>
-                <div className="bg-slate-50 p-4 rounded-lg">
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="text-sm text-white/80">ID Type</label>
@@ -978,7 +978,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <User className="w-4 h-4 mr-2" />
                   Personal Information
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div>
                     <label className="text-sm text-white/80">Full Name</label>
                     <p className="font-medium text-white">
@@ -1023,7 +1023,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <Plane className="w-4 h-4 mr-2" />
                   Travel Details
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div>
                     <label className="text-sm text-white/80">Destination</label>
                     <p className="font-medium text-white flex items-center">
@@ -1058,7 +1058,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <FileText className="w-4 h-4 mr-2" />
                   Document Information
                 </h4>
-                <div className="bg-slate-50 p-4 rounded-lg">
+                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="text-sm text-white/80">Document Type</label>

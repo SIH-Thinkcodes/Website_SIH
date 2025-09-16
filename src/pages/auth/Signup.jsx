@@ -366,14 +366,14 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Email *</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                   placeholder="Enter your email"
                   required
                 />
@@ -381,12 +381,12 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Password *</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Password *</label>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                 placeholder="Create a strong password (min 6 characters)"
                 required
                 minLength={6}
@@ -394,23 +394,23 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Confirm Password *</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Confirm Password *</label>
               <input
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                 placeholder="Confirm your password"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Role</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Role</label>
               <select
                 value={formData.role}
                 onChange={(e) => handleInputChange('role', e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
               >
                 <option value="police">Police Officer</option>
                 <option value="admin">Administrator</option>
@@ -418,7 +418,7 @@ const handleSubmit = async () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm flex items-center backdrop-blur-sm">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                 {error}
               </div>
@@ -436,24 +436,24 @@ const handleSubmit = async () => {
         {/* Step 2: Professional Details */}
         {step === 2 && (
           <div className="space-y-6">
-            <div className="bg-blue-50 rounded-lg p-3 text-sm">
+            <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 text-sm backdrop-blur-sm">
               <div className="flex items-center">
-                <Shield className="w-4 h-4 text-blue-600 mr-2" />
-                <span className="font-medium text-blue-800">
+                <Shield className="w-4 h-4 text-blue-300 mr-2" />
+                <span className="font-medium text-white">
                   Selected Role: {formData.role === 'admin' ? 'Administrator' : 'Police Officer'}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Mobile Number</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Mobile Number</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                <Phone className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                 <input
                   type="tel"
                   value={formData.mobile_number}
                   onChange={(e) => handleInputChange('mobile_number', e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                   placeholder="Enter 10-digit mobile number"
                   maxLength={10}
                 />
@@ -463,16 +463,16 @@ const handleSubmit = async () => {
             {formData.role === 'police' && (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-white/90 mb-2">
                     Badge Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Badge className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                    <Badge className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                     <input
                       type="text"
                       value={formData.badge_number}
                       onChange={(e) => handleInputChange('badge_number', e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                       placeholder="Enter badge number"
                       required
                     />
@@ -480,16 +480,16 @@ const handleSubmit = async () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-white/90 mb-2">
                     Police Station <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Building className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                    <Building className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                     <input
                       type="text"
                       value={formData.station}
                       onChange={(e) => handleInputChange('station', e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                       placeholder="Enter station name"
                       required
                     />
@@ -497,13 +497,13 @@ const handleSubmit = async () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-white/90 mb-2">
                     Unit <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.unit}
                     onChange={(e) => handleInputChange('unit', e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
                     required
                   >
                     <option value="">Select your unit</option>
@@ -519,28 +519,28 @@ const handleSubmit = async () => {
 
             {formData.role === 'admin' && (
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-white/90 mb-2">
                   Admin Secret Key <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                  <Key className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                   <input
                     type="password"
                     value={formData.admin_secret}
                     onChange={(e) => handleInputChange('admin_secret', e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                     placeholder="Enter admin secret key"
                     required
                   />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-white/60 mt-1">
                   Contact system administrator for the secret key
                 </p>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm flex items-center backdrop-blur-sm">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                 {error}
               </div>
@@ -550,7 +550,7 @@ const handleSubmit = async () => {
               <button
                 onClick={handleBack}
                 disabled={loading}
-                className="w-1/2 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                className="w-1/2 bg-white/20 text-white py-3 rounded-lg font-semibold hover:bg-white/30 disabled:opacity-50 transition-colors border border-white/30"
               >
                 Back
               </button>
@@ -568,23 +568,23 @@ const handleSubmit = async () => {
         {/* Step 3: ID Verification */}
         {step === 3 && (
           <div className="space-y-6">
-            <div className="bg-amber-50 rounded-lg p-3 text-sm">
+            <div className="bg-amber-500/20 border border-amber-400/30 rounded-lg p-3 text-sm backdrop-blur-sm">
               <div className="flex items-center">
-                <FileImage className="w-4 h-4 text-amber-600 mr-2" />
-                <span className="font-medium text-amber-800">
+                <FileImage className="w-4 h-4 text-amber-300 mr-2" />
+                <span className="font-medium text-white">
                   Upload your official ID document for verification
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-white/90 mb-2">
                 Official ID Type <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.official_id_type}
                 onChange={(e) => handleInputChange('official_id_type', e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
                 <option value="">Select ID type</option>
@@ -597,29 +597,29 @@ const handleSubmit = async () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-white/90 mb-2">
                 ID Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.official_id_number}
                 onChange={(e) => handleInputChange('official_id_number', e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter ID number"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-white/90 mb-2">
                 Upload ID Document <span className="text-red-500">*</span>
               </label>
-              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center bg-white/10 backdrop-blur-sm">
                 {!imagePreview ? (
                   <div>
-                    <Upload className="mx-auto w-12 h-12 text-slate-400 mb-4" />
-                    <p className="text-slate-600 mb-2">Click to upload or drag and drop</p>
-                    <p className="text-xs text-slate-500">PNG, JPG, WebP up to 5MB</p>
+                    <Upload className="mx-auto w-12 h-12 text-white/60 mb-4" />
+                    <p className="text-white/80 mb-2">Click to upload or drag and drop</p>
+                    <p className="text-xs text-white/60">PNG, JPG, WebP up to 5MB</p>
                     <input
                       type="file"
                       onChange={handleFileChange}
@@ -642,7 +642,7 @@ const handleSubmit = async () => {
                       alt="ID Preview"
                       className="mx-auto max-h-48 rounded-lg mb-4"
                     />
-                    <p className="text-sm text-slate-600 mb-2">{selectedFile?.name}</p>
+                    <p className="text-sm text-white/80 mb-2">{selectedFile?.name}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -659,7 +659,7 @@ const handleSubmit = async () => {
             </div>
 
             {uploadProgress > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-white/20 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
@@ -668,7 +668,7 @@ const handleSubmit = async () => {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm flex items-center">
+              <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm flex items-center backdrop-blur-sm">
                 <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                 {error}
               </div>
@@ -678,7 +678,7 @@ const handleSubmit = async () => {
               <button
                 onClick={handleBack}
                 disabled={loading}
-                className="w-1/2 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                className="w-1/2 bg-white/20 text-white py-3 rounded-lg font-semibold hover:bg-white/30 disabled:opacity-50 transition-colors border border-white/30"
               >
                 Back
               </button>
@@ -694,11 +694,11 @@ const handleSubmit = async () => {
         )}
 
         <div className="mt-6 text-center">
-          <div className="text-slate-500 text-sm">
+          <div className="text-white/60 text-sm">
             Already have an account?{' '}
             <button
               onClick={() => onNavigate('login')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-300 hover:text-blue-200 font-medium"
             >
               Sign In
             </button>

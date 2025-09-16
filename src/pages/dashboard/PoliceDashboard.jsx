@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin, User, Globe, RefreshCw } from 'lucide-react'
-import { dashboardAPI } from '../../utils/supabase'
+import { dashboardAPI, supabase } from '../../utils/supabase'
 
 // Import page components
 import TouristSearch from './TouristSearch'
@@ -14,6 +14,8 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [language, setLanguage] = useState('english')
+  const [incomingEmergency] = useState(null)
+  const [showEmergencyOverlay, setShowEmergencyOverlay] = useState(false)
   
   // Dashboard statistics state
   const [dashboardStats, setDashboardStats] = useState({
@@ -27,7 +29,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
   const [lastUpdated, setLastUpdated] = useState(null)
 
   // Function to fetch dashboard statistics
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = useCallback(async () => {
     if (!profile?.id) return
     
     try {
@@ -43,7 +45,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     } finally {
       setStatsLoading(false)
     }
-  }
+  }, [profile?.id])
 
   // Function to refresh dashboard data
   const refreshDashboard = () => {
@@ -55,7 +57,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     if (profile?.id && isVerified) {
       fetchDashboardStats()
     }
-  }, [profile?.id, isVerified])
+  }, [profile?.id, isVerified, fetchDashboardStats])
 
   // Set up real-time updates every 30 seconds
   useEffect(() => {
@@ -66,7 +68,26 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     }, 30000) // Update every 30 seconds
 
     return () => clearInterval(interval)
-  }, [profile?.id, isVerified])
+  }, [profile?.id, isVerified, fetchDashboardStats])
+
+  // Realtime: listen for emergency alerts and block UI until acknowledged
+  useEffect(() => {
+    if (!profile?.id) return
+
+    const channel = supabase
+      .channel('emergency_alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_alerts' }, () => {
+        setShowEmergencyOverlay(true)
+      })
+      .subscribe()
+
+    return () => { channel.unsubscribe() }
+  }, [profile?.id])
+
+  const acknowledgeEmergency = () => {
+    setShowEmergencyOverlay(false)
+    setCurrentPage('emergency-dispatch')
+  }
 
   // Language options
   const languageOptions = [
@@ -534,7 +555,7 @@ const renderPage = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64">
+      <div className={`flex-1 lg:ml-64 ${showEmergencyOverlay ? 'pointer-events-none select-none' : ''}`}>
         {/* Top Header */}
         <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-20">
           <div className="px-4 py-3 flex items-center justify-between">
@@ -571,11 +592,42 @@ const renderPage = () => {
         </header>
 
         {/* Main Content */}
-        <main className="p-4 lg:p-6">
+        <main className={`p-4 lg:p-6 ${showEmergencyOverlay ? 'blur-sm' : ''}`}>
           {renderPage()}
         </main>
       </div>
       
+      {/* Emergency Blocking Overlay */}
+      {showEmergencyOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl max-w-md w-[90%] p-6 text-white">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-red-600 w-10 h-10 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Emergency Alert</h3>
+                <p className="text-white/70 text-sm">Immediate attention required</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div><span className="text-white/60">Type:</span> <span className="font-medium">{incomingEmergency?.type || 'Emergency'}</span></div>
+              <div><span className="text-white/60">Person:</span> <span className="font-medium">{incomingEmergency?.tourist_name || incomingEmergency?.name || 'Unknown'}</span></div>
+              {incomingEmergency?.phone && (
+                <div><span className="text-white/60">Phone:</span> <span className="font-medium">{incomingEmergency.phone}</span></div>
+              )}
+              <div><span className="text-white/60">Received:</span> <span className="font-medium">{new Date(incomingEmergency?.created_at || Date.now()).toLocaleString()}</span></div>
+            </div>
+
+            <div className="mt-6">
+              <button onClick={acknowledgeEmergency} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-colors">Acknowledge and Open Dispatch</button>
+              <p className="mt-2 text-xs text-white/60 text-center">Dashboard access is blocked until acknowledged</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

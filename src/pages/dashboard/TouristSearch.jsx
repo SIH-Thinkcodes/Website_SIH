@@ -15,10 +15,10 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
   };
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4`}>
-      <div className="bg-white/10 backdrop-blur-md rounded-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-white/20">
+    <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4`}>
+      <div className="bg-white/10 backdrop-blur-xl rounded-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-white/20">
         {/* Modal Header */}
-        <div className="sticky top-0 bg-white/10 backdrop-blur-md border-b border-white/20 p-6 rounded-t-xl">
+        <div className="bg-white/10 border-b border-white/20 p-6 rounded-t-xl">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
@@ -31,7 +31,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
             </div>
             <button 
               onClick={onClose} 
-              className="text-white/60 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all"
+              className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-all"
             >
               <XCircle className="w-6 h-6" />
             </button>
@@ -92,8 +92,8 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
           </div>
 
           {/* Travel Information */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 overflow-hidden">
-            <div className="bg-white bg-opacity-80 backdrop-blur p-4 border-b border-green-200">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-4 border-b border-white/20">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
                 <Plane className="w-5 h-5 text-green-600" />
                 Travel Information
@@ -128,9 +128,9 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                     }) : 'Not set'}
                   </p>
                 </div>
-                <div className="xl:col-span-3 border-t border-green-200 pt-4 mt-2">
+                <div className="xl:col-span-3 border-t border-white/20 pt-4 mt-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/60 mb-3">Emergency Contact</p>
-                  <div className="bg-white bg-opacity-60 rounded-lg p-4 space-y-2">
+                  <div className="bg-white/10 rounded-lg p-4 space-y-2 border border-white/20">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-green-600 flex-shrink-0" />
                       <span className="font-semibold text-white">{traveller.emergency_contact_name || 'Not provided'}</span>
@@ -146,8 +146,8 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
           </div>
 
           {/* Document Information */}
-          <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl border border-purple-200 overflow-hidden">
-            <div className="bg-white bg-opacity-80 backdrop-blur p-4 border-b border-purple-200">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-4 border-b border-white/20">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
                 <FileText className="w-5 h-5 text-purple-600" />
                 Document Information
@@ -167,7 +167,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
               {traveller.document_url && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Document Image</p>
-                  <div className="bg-white rounded-lg p-4 border-2 border-dashed border-purple-200">
+                  <div className="bg-white/10 rounded-lg p-4 border-2 border-dashed border-white/20">
                     <img
                       src={traveller.document_url}
                       alt="Document"
@@ -200,8 +200,8 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
 
           {/* Blockchain Information */}
           {traveller.digital_id && (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
-              <div className="bg-white bg-opacity-80 backdrop-blur p-4 border-b border-amber-200">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
+              <div className="bg-white/10 backdrop-blur-sm p-4 border-b border-white/20">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
                   <Shield className="w-5 h-5 text-amber-600" />
                   Blockchain Information
@@ -218,14 +218,14 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Wallet Address</p>
-                    <div className="bg-white rounded-lg p-3 border">
+                    <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                       <p className="font-mono text-xs text-white break-all">
                         {traveller.blockchain_wallet_address || 'Not available'}
                       </p>
                       {traveller.blockchain_wallet_address && (
                         <button
                           onClick={() => copyToClipboard(traveller.blockchain_wallet_address)}
-                          className="mt-2 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                          className="mt-2 text-xs text-amber-300 hover:text-amber-200 font-medium"
                         >
                           Copy Address
                         </button>
@@ -234,7 +234,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Transaction Hash</p>
-                    <div className="bg-white rounded-lg p-3 border">
+                    <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                       <p className="font-mono text-xs text-white break-all mb-2">
                         {traveller.blockchain_transaction_hash || 'Not available'}
                       </p>
@@ -242,7 +242,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                         <div className="flex flex-col sm:flex-row gap-2">
                           <button
                             onClick={() => copyToClipboard(traveller.blockchain_transaction_hash)}
-                            className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+                            className="text-xs text-amber-300 hover:text-amber-200 font-medium"
                           >
                             Copy Hash
                           </button>
@@ -250,7 +250,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                             href={`https://www.oklink.com/amoy/tx/${traveller.blockchain_transaction_hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1"
+                            className="text-xs text-blue-300 hover:text-blue-200 font-medium inline-flex items-center gap-1"
                           >
                             <Eye className="w-3 h-3" />
                             View on Explorer
@@ -265,8 +265,8 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
           )}
 
           {/* Status and Actions */}
-          <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
-            <div className="bg-white p-4 border-b border-gray-200">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-4 border-b border-white/20">
               <h3 className="text-lg font-semibold text-white">Status & Actions</h3>
             </div>
             <div className="p-6">
@@ -285,7 +285,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                 <div className="flex flex-wrap gap-3 w-full lg:w-auto">
                   {isVerified ? (
                     <button
-                      className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                      className="flex items-center gap-2 px-4 py-2 border border-red-400/30 text-red-300 rounded-lg hover:bg-red-500/20 transition-colors font-medium"
                       onClick={() => onUnverify(traveller.id)}
                     >
                       <XCircle className="w-4 h-4" />
@@ -301,7 +301,7 @@ const TouristProfileModal = ({ traveller, isOpen, onClose, onVerify, onUnverify,
                         Verify Traveller
                       </button>
                       <button
-                        className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                        className="flex items-center gap-2 px-4 py-2 border border-red-400/30 text-red-300 rounded-lg hover:bg-red-500/20 transition-colors font-medium"
                         onClick={() => onReject(traveller.id)}
                       >
                         <XCircle className="w-4 h-4" />

@@ -578,19 +578,7 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
             
             {/* Language Selector */}
-            <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
-              <Globe className="w-4 h-4 text-white/80" />
-              <select 
-                value={language} 
-                onChange={(e) => setLanguage(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-white"
-              >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="ta">தமிழ்</option>
-                <option value="fr">Français</option>
-              </select>
-            </div>
+
           </div>
 
           {/* Filters */}

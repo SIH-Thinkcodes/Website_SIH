@@ -6,20 +6,21 @@ import Signup from './pages/auth/Signup'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import AdminDashboard from './pages/dashboard/AdminDashboard'
 import PoliceDashboard from './pages/dashboard/PoliceDashboard'
+import { GlassBackground } from './components/ui/glass-background'
 
 // Error component for profile loading issues
 function ProfileError({ error, onRetry, onLogout }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 border border-white/20">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-400/30">
+            <svg className="w-8 h-8 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Profile Loading Error</h2>
-          <p className="text-slate-600 mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-white mb-2">Profile Loading Error</h2>
+          <p className="text-white/80 mb-6">{error}</p>
           <div className="space-y-3">
             <button 
               onClick={onRetry}
@@ -29,7 +30,7 @@ function ProfileError({ error, onRetry, onLogout }) {
             </button>
             <button 
               onClick={onLogout}
-              className="w-full bg-slate-200 text-slate-700 py-3 px-4 rounded-lg hover:bg-slate-300 font-medium"
+              className="w-full bg-white/20 text-white py-3 px-4 rounded-lg hover:bg-white/30 font-medium border border-white/30"
             >
               Sign Out
             </button>
@@ -148,10 +149,10 @@ function AppContent() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white/20">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-slate-600 mt-4 text-center">Loading...</p>
+          <p className="text-white/80 mt-4 text-center">Loading...</p>
         </div>
       </div>
     )
@@ -222,9 +223,14 @@ function AppContent() {
 // Main App wrapper with AuthProvider
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <div className="relative min-h-screen">
+      <GlassBackground className="fixed inset-0 z-0" />
+      <div className="relative z-10">
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </div>
+    </div>
   )
 }
 

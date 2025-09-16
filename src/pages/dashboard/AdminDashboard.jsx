@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Shield, Users, CheckCircle, Clock, LogOut, UserCheck, UserX, Eye, X, FileText, Phone, MapPin, Badge as BadgeIcon, Building, AlertCircle, Plane, Calendar, User } from 'lucide-react'
-import { authAPI, travellerAPI } from '../../utils/supabase'
+import { authAPI, travellerAPI, dashboardAPI } from '../../utils/supabase'
 
  
 
@@ -195,6 +195,17 @@ const AdminDashboard = ({ profile, onLogout }) => {
   const [selectedTraveller, setSelectedTraveller] = useState(null);
   const [showOfficerModal, setShowOfficerModal] = useState(false);
   const [showTravellerModal, setShowTravellerModal] = useState(false);
+  
+  // Dashboard statistics state
+  const [dashboardStats, setDashboardStats] = useState({
+    activeCases: 0,
+    totalReports: 0,
+    pendingTasks: 0,
+    recentActivity: []
+  })
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
   const [pendingTravellers, setPendingTravellers] = useState([]);
@@ -226,6 +237,42 @@ const AdminDashboard = ({ profile, onLogout }) => {
       return () => clearTimeout(timeout);
     }
   }, [error]);
+
+  // Function to fetch dashboard statistics
+  const fetchDashboardStats = async () => {
+    try {
+      setStatsLoading(true)
+      setStatsError(null)
+      
+      const stats = await dashboardAPI.getAdminDashboardStats()
+      setDashboardStats(stats)
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+      setStatsError('Failed to load dashboard data')
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  // Function to refresh dashboard data
+  const refreshDashboard = () => {
+    fetchDashboardStats()
+  }
+
+  // Fetch dashboard stats on component mount
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  // Set up real-time updates every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDashboardStats()
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [])
 
   const loadData = async () => {
     setLoadingTravellers(true);
@@ -411,7 +458,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="text-red-500 w-12 h-12 mx-auto mb-4" />
           <p className="text-slate-800 font-semibold">Profile data is missing</p>
@@ -422,17 +469,17 @@ const AdminDashboard = ({ profile, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
+      <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-5 flex items-center justify-center">
           <div className="flex items-center space-x-3">
             <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
               <Shield className="text-white w-6 h-6" />
             </div>
             <div className="text-center">
-              <h1 className="text-xl font-bold text-slate-800">Welcome to Police Admin Portal</h1>
-              <p className="text-sm text-slate-600">Administrator Dashboard</p>
+              <h1 className="text-xl font-bold text-white">Welcome to Police Admin Portal</h1>
+              <p className="text-sm text-white/80">Administrator Dashboard</p>
             </div>
           </div>
         </div>
@@ -442,6 +489,83 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-10">
+        {/* Dashboard Stats Section */}
+        <div className="mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white/80">Active Cases</p>
+                  {statsLoading ? (
+                    <div className="animate-pulse bg-slate-200 h-6 w-12 rounded"></div>
+                  ) : (
+                    <p className="text-xl lg:text-2xl font-bold text-white">
+                      {statsError ? '—' : dashboardStats.activeCases}
+                    </p>
+                  )}
+                </div>
+                <Shield className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white/80">Total Reports</p>
+                  {statsLoading ? (
+                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+                  ) : (
+                    <p className="text-xl lg:text-2xl font-bold text-white">
+                      {statsError ? '—' : dashboardStats.totalReports}
+                    </p>
+                  )}
+                </div>
+                <FileText className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white/80">Pending Tasks</p>
+                  {statsLoading ? (
+                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+                  ) : (
+                    <p className="text-xl lg:text-2xl font-bold text-white">
+                      {statsError ? '—' : dashboardStats.pendingTasks}
+                    </p>
+                  )}
+                </div>
+                <AlertCircle className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+              </div>
+            </div>
+          </div>
+
+          {/* Refresh Button and Last Updated */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshDashboard}
+                disabled={statsLoading}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Clock className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              {lastUpdated && (
+                <span className="text-xs text-slate-500">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+            {statsError && (
+              <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-lg">
+                {statsError}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <aside className="md:col-span-3">
             <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-3 md:p-4 sticky top-24">

@@ -381,14 +381,14 @@ const FIRGenerator = () => {
   if (currentView === 'create' || currentView === 'edit') {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-blue-100">
-          <div className="p-6 border-b border-slate-200">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20">
+          <div className="p-6 border-b border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-xl font-bold text-white">
                   {currentView === 'create' ? 'Create New FIR' : 'Edit FIR'}
                 </h2>
-                <p className="text-slate-600 mt-1">
+                <p className="text-white/80 mt-1">
                   {currentView === 'create' 
                     ? 'Fill in the details to create a new First Information Report'
                     : 'Update the FIR details and status'
@@ -400,7 +400,7 @@ const FIRGenerator = () => {
                   setCurrentView('list')
                   resetForm()
                 }}
-                className="bg-slate-100 text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                className="bg-white/20 text-white/80 p-2 rounded-lg hover:bg-white/30 transition-colors border border-white/30"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -409,81 +409,81 @@ const FIRGenerator = () => {
 
           <form onSubmit={currentView === 'create' ? handleCreateFIR : handleUpdateFIR} className="p-6">
             {successMessage && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <p className="text-green-800 font-medium">{successMessage}</p>
+              <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-4 mb-6 backdrop-blur-sm">
+                <p className="text-green-300 font-medium">{successMessage}</p>
               </div>
             )}
 
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-red-800 font-medium">{errors.submit}</p>
+              <div className="bg-red-500/20 border border-red-400/30 rounded-lg p-4 mb-6 backdrop-blur-sm">
+                <p className="text-red-300 font-medium">{errors.submit}</p>
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Complainant Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">
+                <h3 className="text-lg font-semibold text-white border-b border-white/20 pb-2">
                   Complainant Information
                 </h3>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Name <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Name <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.complainant_name}
                     onChange={(e) => setFormData({...formData, complainant_name: e.target.value})}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.complainant_name ? 'border-red-500' : 'border-slate-300'
+                      errors.complainant_name ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                     }`}
                     placeholder="Enter complainant's full name"
                   />
                   {errors.complainant_name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.complainant_name}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.complainant_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Phone Number <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="tel"
                     value={formData.complainant_phone}
                     onChange={(e) => setFormData({...formData, complainant_phone: e.target.value})}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.complainant_phone ? 'border-red-500' : 'border-slate-300'
+                      errors.complainant_phone ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                     }`}
                     placeholder="Enter phone number"
                   />
                   {errors.complainant_phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.complainant_phone}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.complainant_phone}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Email Address
                   </label>
                   <input
                     type="email"
                     value={formData.complainant_email}
                     onChange={(e) => setFormData({...formData, complainant_email: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter email address"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Address
                   </label>
                   <textarea
                     value={formData.complainant_address}
                     onChange={(e) => setFormData({...formData, complainant_address: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows="3"
                     placeholder="Enter complete address"
                   />
@@ -492,73 +492,73 @@ const FIRGenerator = () => {
 
               {/* Incident Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">
+                <h3 className="text-lg font-semibold text-white border-b border-white/20 pb-2">
                   Incident Information
                 </h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Incident Date <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      Incident Date <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.incident_date}
                       onChange={(e) => setFormData({...formData, incident_date: e.target.value})}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.incident_date ? 'border-red-500' : 'border-slate-300'
+                        errors.incident_date ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                       }`}
                     />
                     {errors.incident_date && (
-                      <p className="text-red-500 text-sm mt-1">{errors.incident_date}</p>
+                      <p className="text-red-400 text-sm mt-1">{errors.incident_date}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Incident Time <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-white/90 mb-2">
+                      Incident Time <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="time"
                       value={formData.incident_time}
                       onChange={(e) => setFormData({...formData, incident_time: e.target.value})}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.incident_time ? 'border-red-500' : 'border-slate-300'
+                        errors.incident_time ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                       }`}
                     />
                     {errors.incident_time && (
-                      <p className="text-red-500 text-sm mt-1">{errors.incident_time}</p>
+                      <p className="text-red-400 text-sm mt-1">{errors.incident_time}</p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Incident Location <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Incident Location <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.incident_location}
                     onChange={(e) => setFormData({...formData, incident_location: e.target.value})}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.incident_location ? 'border-red-500' : 'border-slate-300'
+                      errors.incident_location ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                     }`}
                     placeholder="Enter incident location"
                   />
                   {errors.incident_location && (
-                    <p className="text-red-500 text-sm mt-1">{errors.incident_location}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.incident_location}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Crime Type <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Crime Type <span className="text-red-400">*</span>
                   </label>
                   <select
                     value={formData.crime_type}
                     onChange={(e) => setFormData({...formData, crime_type: e.target.value})}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.crime_type ? 'border-red-500' : 'border-slate-300'
+                      errors.crime_type ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                     }`}
                   >
                     <option value="">Select crime type</option>
@@ -567,18 +567,18 @@ const FIRGenerator = () => {
                     ))}
                   </select>
                   {errors.crime_type && (
-                    <p className="text-red-500 text-sm mt-1">{errors.crime_type}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.crime_type}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Status
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {statusOptions.map(status => (
                       <option key={status.value} value={status.value}>{status.label}</option>
@@ -590,50 +590,50 @@ const FIRGenerator = () => {
 
             {/* Incident Description */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2 mb-4">
+              <h3 className="text-lg font-semibold text-white border-b border-white/20 pb-2 mb-4">
                 Incident Details
               </h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Incident Description <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-white/90 mb-2">
+                    Incident Description <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     value={formData.incident_description}
                     onChange={(e) => setFormData({...formData, incident_description: e.target.value})}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.incident_description ? 'border-red-500' : 'border-slate-300'
+                      errors.incident_description ? 'border-red-400' : 'border-white/30 bg-white/20 text-white placeholder-white/60'
                     }`}
                     rows="4"
                     placeholder="Provide detailed description of the incident"
                   />
                   {errors.incident_description && (
-                    <p className="text-red-500 text-sm mt-1">{errors.incident_description}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.incident_description}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Witness Details
                   </label>
                   <textarea
                     value={formData.witness_details}
                     onChange={(e) => setFormData({...formData, witness_details: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows="3"
                     placeholder="List any witnesses and their contact information"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-white/90 mb-2">
                     Evidence Description
                   </label>
                   <textarea
                     value={formData.evidence_description}
                     onChange={(e) => setFormData({...formData, evidence_description: e.target.value})}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows="3"
                     placeholder="Describe any physical evidence or documentation"
                   />
@@ -641,14 +641,14 @@ const FIRGenerator = () => {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-slate-200">
+            <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-white/20">
               <button
                 type="button"
                 onClick={() => {
                   setCurrentView('list')
                   resetForm()
                 }}
-                className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-6 py-2 border border-white/30 text-white/80 rounded-lg hover:bg-white/20 transition-colors bg-white/10"
               >
                 Cancel
               </button>
@@ -670,29 +670,29 @@ const FIRGenerator = () => {
   if (currentView === 'view' && selectedFIR) {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-blue-100">
-          <div className="p-6 border-b border-slate-200">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20">
+          <div className="p-6 border-b border-white/20">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">FIR Details</h2>
-                <p className="text-slate-600 mt-1">FIR Number: {selectedFIR.fir_number}</p>
+                <h2 className="text-xl font-bold text-white">FIR Details</h2>
+                <p className="text-white/80 mt-1">FIR Number: {selectedFIR.fir_number}</p>
               </div>
               <div className="flex space-x-2">
                 <button
                   onClick={async () => await generateFIRPdf(selectedFIR)}
-                  className="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+                  className="bg-indigo-500/20 text-indigo-300 p-2 rounded-lg hover:bg-indigo-500/30 border border-indigo-400/30 transition-colors"
                 >
                   <FileText className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleEditFIR(selectedFIR)}
-                  className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="bg-blue-500/20 text-blue-300 p-2 rounded-lg hover:bg-blue-500/30 border border-blue-400/30 transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setCurrentView('list')}
-                  className="bg-slate-100 text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                  className="bg-white/20 text-white/80 p-2 rounded-lg hover:bg-white/30 border border-white/30 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -704,26 +704,26 @@ const FIRGenerator = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Complainant Information */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Complainant Information</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Complainant Information</h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-slate-600">Name</p>
-                    <p className="font-medium text-slate-800">{selectedFIR.complainant_name}</p>
+                    <p className="text-sm text-white/80">Name</p>
+                    <p className="font-medium text-white">{selectedFIR.complainant_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">Phone</p>
-                    <p className="font-medium text-slate-800">{selectedFIR.complainant_phone}</p>
+                    <p className="text-sm text-white/80">Phone</p>
+                    <p className="font-medium text-white">{selectedFIR.complainant_phone}</p>
                   </div>
                   {selectedFIR.complainant_email && (
                     <div>
-                      <p className="text-sm text-slate-600">Email</p>
-                      <p className="font-medium text-slate-800">{selectedFIR.complainant_email}</p>
+                      <p className="text-sm text-white/80">Email</p>
+                      <p className="font-medium text-white">{selectedFIR.complainant_email}</p>
                     </div>
                   )}
                   {selectedFIR.complainant_address && (
                     <div>
-                      <p className="text-sm text-slate-600">Address</p>
-                      <p className="font-medium text-slate-800">{selectedFIR.complainant_address}</p>
+                      <p className="text-sm text-white/80">Address</p>
+                      <p className="font-medium text-white">{selectedFIR.complainant_address}</p>
                     </div>
                   )}
                 </div>
@@ -731,26 +731,26 @@ const FIRGenerator = () => {
 
               {/* Incident Information */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Incident Information</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Incident Information</h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-slate-600">Date & Time</p>
-                    <p className="font-medium text-slate-800">
+                    <p className="text-sm text-white/80">Date & Time</p>
+                    <p className="font-medium text-white">
                       {formatDate(selectedFIR.incident_date)} at {selectedFIR.incident_time}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">Location</p>
-                    <p className="font-medium text-slate-800">{selectedFIR.incident_location}</p>
+                    <p className="text-sm text-white/80">Location</p>
+                    <p className="font-medium text-white">{selectedFIR.incident_location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">Crime Type</p>
-                    <p className="font-medium text-slate-800">{selectedFIR.crime_type}</p>
+                    <p className="text-sm text-white/80">Crime Type</p>
+                    <p className="font-medium text-white">{selectedFIR.crime_type}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">Status</p>
+                    <p className="text-sm text-white/80">Status</p>
                     <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${getStatusColor(selectedFIR.status)}-100 text-${getStatusColor(selectedFIR.status)}-700`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${getStatusColor(selectedFIR.status)}-500/20 text-${getStatusColor(selectedFIR.status)}-300 border border-${getStatusColor(selectedFIR.status)}-400/30`}>
                         {statusOptions.find(s => s.value === selectedFIR.status)?.label}
                       </span>
                     </div>
@@ -761,9 +761,9 @@ const FIRGenerator = () => {
 
             {/* Incident Description */}
             <div className="mt-8">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Incident Description</h3>
-              <div className="bg-slate-50 rounded-lg p-4">
-                <p className="text-slate-800 whitespace-pre-wrap">{selectedFIR.incident_description}</p>
+              <h3 className="text-lg font-semibold text-white mb-4">Incident Description</h3>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <p className="text-white whitespace-pre-wrap">{selectedFIR.incident_description}</p>
               </div>
             </div>
 
@@ -772,17 +772,17 @@ const FIRGenerator = () => {
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {selectedFIR.witness_details && (
                   <div>
-                    <h4 className="font-semibold text-slate-800 mb-2">Witness Details</h4>
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-800 whitespace-pre-wrap">{selectedFIR.witness_details}</p>
+                    <h4 className="font-semibold text-white mb-2">Witness Details</h4>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                      <p className="text-white whitespace-pre-wrap">{selectedFIR.witness_details}</p>
                     </div>
                   </div>
                 )}
                 {selectedFIR.evidence_description && (
                   <div>
-                    <h4 className="font-semibold text-slate-800 mb-2">Evidence Description</h4>
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-800 whitespace-pre-wrap">{selectedFIR.evidence_description}</p>
+                    <h4 className="font-semibold text-white mb-2">Evidence Description</h4>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                      <p className="text-white whitespace-pre-wrap">{selectedFIR.evidence_description}</p>
                     </div>
                   </div>
                 )}
@@ -790,10 +790,10 @@ const FIRGenerator = () => {
             )}
 
             {/* Officer Information */}
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <h4 className="font-semibold text-slate-800 mb-2">Filed By</h4>
+            <div className="mt-6 pt-6 border-t border-white/20">
+              <h4 className="font-semibold text-white mb-2">Filed By</h4>
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-slate-800">
+                <p className="text-white">
                   <strong>{selectedFIR.officer_name}</strong> (Badge: {selectedFIR.officer_badge})<br />
                   Station: {selectedFIR.officer_station}<br />
                   Filed on: {formatDate(selectedFIR.created_at)}
@@ -811,8 +811,8 @@ const FIRGenerator = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">E-FIR Generator</h1>
-          <p className="text-slate-600 mt-1">Digital First Information Report management system</p>
+          <h1 className="text-2xl font-bold text-white">E-FIR Generator</h1>
+          <p className="text-white/80 mt-1">Digital First Information Report management system</p>
         </div>
         <button
           onClick={() => {
@@ -827,28 +827,28 @@ const FIRGenerator = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
+      <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20 p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Search</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">Search</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Search FIRs..."
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({...filters, status: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Status</option>
               {statusOptions.map(status => (
@@ -858,11 +858,11 @@ const FIRGenerator = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Crime Type</label>
+            <label className="block text-sm font-medium text-white/90 mb-2">Crime Type</label>
             <select
               value={filters.crime_type}
               onChange={(e) => setFilters({...filters, crime_type: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-white/30 bg-white/20 text-white placeholder-white/60 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Types</option>
               {crimeTypes.map(type => (
@@ -884,37 +884,37 @@ const FIRGenerator = () => {
       </div>
 
       {/* FIR List */}
-      <div className="bg-white rounded-xl shadow-sm border border-blue-100">
-        <div className="p-6 border-b border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800">FIR Reports</h2>
-          <p className="text-slate-600 mt-1">Manage and track First Information Reports</p>
+      <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20">
+        <div className="p-6 border-b border-white/20">
+          <h2 className="text-lg font-semibold text-white">FIR Reports</h2>
+          <p className="text-white/80 mt-1">Manage and track First Information Reports</p>
         </div>
 
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-            <p className="text-slate-600 mt-4">Loading FIRs...</p>
+            <p className="text-white/80 mt-4">Loading FIRs...</p>
           </div>
         ) : firs.length === 0 ? (
           <div className="p-8 text-center">
-            <FileText className="text-slate-400 w-12 h-12 mx-auto mb-4" />
-            <p className="text-slate-600">No FIRs found</p>
-            <p className="text-slate-500 text-sm mt-1">Create your first FIR to get started</p>
+            <FileText className="text-white/60 w-12 h-12 mx-auto mb-4" />
+            <p className="text-white/80">No FIRs found</p>
+            <p className="text-white/60 text-sm mt-1">Create your first FIR to get started</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-white/20">
             {firs.map((fir) => (
-              <div key={fir.id} className="p-6 hover:bg-slate-50 transition-colors">
+              <div key={fir.id} className="p-6 hover:bg-white/10 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-2">
-                      <h3 className="font-semibold text-slate-800">{fir.fir_number}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${getStatusColor(fir.status)}-100 text-${getStatusColor(fir.status)}-700 flex items-center space-x-1`}>
+                      <h3 className="font-semibold text-white">{fir.fir_number}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${getStatusColor(fir.status)}-500/20 text-${getStatusColor(fir.status)}-300 border border-${getStatusColor(fir.status)}-400/30 flex items-center space-x-1`}>
                         {getStatusIcon(fir.status)}
                         <span>{statusOptions.find(s => s.value === fir.status)?.label}</span>
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-white/80">
                       <div>
                         <p><strong>Complainant:</strong> {fir.complainant_name}</p>
                         <p><strong>Crime:</strong> {fir.crime_type}</p>
@@ -932,20 +932,20 @@ const FIRGenerator = () => {
                   <div className="flex space-x-2 ml-4">
                     <button
                       onClick={() => handleViewFIR(fir)}
-                      className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="bg-blue-500/20 text-blue-300 p-2 rounded-lg hover:bg-blue-500/30 border border-blue-400/30 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={async () => await generateFIRPdf(fir)}
-                      className="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+                      className="bg-indigo-500/20 text-indigo-300 p-2 rounded-lg hover:bg-indigo-500/30 border border-indigo-400/30 transition-colors"
                       title="Download PDF"
                     >
                       <FileText className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleEditFIR(fir)}
-                      className="bg-green-50 text-green-600 p-2 rounded-lg hover:bg-green-100 transition-colors"
+                      className="bg-green-500/20 text-green-300 p-2 rounded-lg hover:bg-green-500/30 border border-green-400/30 transition-colors"
                     >
                       <Edit className="w-4 h-4" />
                     </button>

@@ -147,11 +147,11 @@ const EmergencyDispatch = ({ profile }) => {
   // Priority colors
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'critical': return 'bg-red-50 text-red-700 border-red-200';
-      case 'high': return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'low': return 'bg-green-50 text-green-700 border-green-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'critical': return 'bg-red-500/20 text-red-300 border-red-400/30';
+      case 'high': return 'bg-orange-500/20 text-orange-300 border-orange-400/30';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30';
+      case 'low': return 'bg-green-500/20 text-green-300 border-green-400/30';
+      default: return 'bg-white/20 text-white/80 border-white/30';
     }
   };
 
@@ -540,17 +540,17 @@ const EmergencyDispatch = ({ profile }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
           <RefreshCw className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-600">Loading emergency alerts...</p>
+          <p className="text-lg text-white/80">Loading emergency alerts...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-3 ${
@@ -565,25 +565,25 @@ const EmergencyDispatch = ({ profile }) => {
 
       <div className="p-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
+              <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
               <div className="flex items-center space-x-6 text-sm">
-                <span className="text-gray-600">{t.activeAlerts}: <span className="font-semibold text-blue-600">{filteredAlerts.length}</span></span>
-                <span className="text-gray-300">•</span>
-                <span className="text-gray-600">Critical: <span className="font-semibold text-red-600">{filteredAlerts.filter(a => a.priority_level === 'Critical').length}</span></span>
-                <span className="text-gray-600">New: <span className="font-semibold text-orange-600">{filteredAlerts.filter(a => a.status === 'New').length}</span></span>
+                <span className="text-white/80">{t.activeAlerts}: <span className="font-semibold text-blue-300">{filteredAlerts.length}</span></span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80">Critical: <span className="font-semibold text-red-300">{filteredAlerts.filter(a => a.priority_level === 'Critical').length}</span></span>
+                <span className="text-white/80">New: <span className="font-semibold text-orange-300">{filteredAlerts.filter(a => a.status === 'New').length}</span></span>
               </div>
             </div>
             
             {/* Language Selector */}
-            <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-3 py-2">
-              <Globe className="w-4 h-4 text-gray-600" />
+            <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
+              <Globe className="w-4 h-4 text-white/80" />
               <select 
                 value={language} 
                 onChange={(e) => setLanguage(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-sm font-medium"
+                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-white"
               >
                 <option value="en">English</option>
                 <option value="hi">हिन्दी</option>
@@ -596,20 +596,20 @@ const EmergencyDispatch = ({ profile }) => {
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-3 top-3 text-white/60" />
               <input
                 type="text"
                 placeholder={t.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
               />
             </div>
             
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
             >
               <option value="all">{t.allStatus}</option>
               <option value="new">{t.new}</option>
@@ -622,7 +622,7 @@ const EmergencyDispatch = ({ profile }) => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
             >
               <option value="all">{t.allTypes}</option>
               <option value="medical emergency">{t.medicalEmergency}</option>
@@ -636,7 +636,7 @@ const EmergencyDispatch = ({ profile }) => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
             >
               <option value="all">{t.allPriority}</option>
               <option value="critical">{t.critical}</option>
@@ -658,7 +658,7 @@ const EmergencyDispatch = ({ profile }) => {
         {/* Alerts List */}
         <div className="space-y-4">
           {filteredAlerts.map((alert) => (
-            <div key={alert.id} className={`bg-white rounded-lg shadow-sm border-l-4 ${
+            <div key={alert.id} className={`bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 border-l-4 ${
               alert.priority_level === 'Critical' ? 'border-l-red-500' : 
               alert.priority_level === 'High' ? 'border-l-orange-500' : 
               alert.priority_level === 'Medium' ? 'border-l-yellow-500' : 'border-l-green-500'
@@ -669,10 +669,10 @@ const EmergencyDispatch = ({ profile }) => {
                     <div className="flex items-center space-x-3 mb-3">
                       <span className="text-2xl">{getAlertIcon(alert.alert_type)}</span>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        <h3 className="text-lg font-semibold text-white mb-1">
                           {alert.tourist_name}
                         </h3>
-                        <div className="flex items-center space-x-3 text-sm text-gray-600">
+                        <div className="flex items-center space-x-3 text-sm text-white/80">
                           <span className="font-medium">{alert.tourist_id}</span>
                           <span>•</span>
                           <span>{alert.tourist_nationality}</span>
@@ -694,14 +694,14 @@ const EmergencyDispatch = ({ profile }) => {
                     {/* Officer Information */}
                     {alert.current_handling_officer_name && (
                       <div className="mb-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 backdrop-blur-sm">
                           <div className="flex items-center space-x-2 text-sm">
-                            <Shield className="w-4 h-4 text-blue-600" />
-                            <span className="text-blue-700 font-medium">{t.handledBy}:</span>
-                            <span className="text-blue-900 font-semibold">{alert.current_handling_officer_name}</span>
+                            <Shield className="w-4 h-4 text-blue-300" />
+                            <span className="text-blue-300 font-medium">{t.handledBy}:</span>
+                            <span className="text-white font-semibold">{alert.current_handling_officer_name}</span>
                           </div>
                           {alert.last_action_by_officer_name && alert.last_action_timestamp && (
-                            <div className="flex items-center space-x-2 text-xs text-blue-600 mt-1">
+                            <div className="flex items-center space-x-2 text-xs text-blue-300 mt-1">
                               <Activity className="w-3 h-3" />
                               <span>{t.lastActionBy}: {alert.last_action_by_officer_name}</span>
                               <span>•</span>
@@ -713,36 +713,36 @@ const EmergencyDispatch = ({ profile }) => {
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-1 flex items-center">
-                          <MapPin className="w-4 h-4 mr-2" />
+                      <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                        <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
+                          <MapPin className="w-4 h-4 mr-2 text-white/60" />
                           {t.location}
                         </p>
-                        <p className="text-gray-900 text-sm">{alert.location_address}</p>
+                        <p className="text-white text-sm">{alert.location_address}</p>
                       </div>
                       
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-1 flex items-center">
-                          <Clock className="w-4 h-4 mr-2" />
+                      <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                        <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
+                          <Clock className="w-4 h-4 mr-2 text-white/60" />
                           {t.time}
                         </p>
-                        <p className="text-gray-900 text-sm">{formatTime(alert.created_at)}</p>
+                        <p className="text-white text-sm">{formatTime(alert.created_at)}</p>
                       </div>
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Alert Message:</p>
-                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
-                        <p className="text-gray-900 text-sm">{alert.alert_message}</p>
+                      <p className="text-sm font-medium text-white/80 mb-2">Alert Message:</p>
+                      <div className="bg-yellow-500/20 border border-yellow-400/30 p-3 rounded-lg backdrop-blur-sm">
+                        <p className="text-white text-sm">{alert.alert_message}</p>
                       </div>
                     </div>
 
                     {alert.assigned_unit_name && (
                       <div className="mb-4">
-                        <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
-                          <p className="text-sm text-green-700">
+                        <div className="bg-green-500/20 border border-green-400/30 p-3 rounded-lg backdrop-blur-sm">
+                          <p className="text-sm text-green-300">
                             <UserCheck className="w-4 h-4 inline mr-2" />
-                            {t.assignedTo}: <span className="font-semibold">{alert.assigned_unit_name}</span>
+                            {t.assignedTo}: <span className="font-semibold text-white">{alert.assigned_unit_name}</span>
                           </p>
                         </div>
                       </div>
@@ -751,7 +751,7 @@ const EmergencyDispatch = ({ profile }) => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-white/20 pt-4">
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     {alert.status === 'New' && (
                       <button
@@ -850,16 +850,16 @@ const EmergencyDispatch = ({ profile }) => {
 
                   {/* Response Actions Log */}
                   {alert.response_actions && alert.response_actions.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-gray-100">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Recent Actions:</p>
+                    <div className="mt-4 pt-3 border-t border-white/20">
+                      <p className="text-sm font-medium text-white/80 mb-2">Recent Actions:</p>
                       <div className="space-y-1">
                         {alert.response_actions.slice(-3).map((action, index) => (
-                          <div key={index} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                          <div key={index} className="flex items-center justify-between text-sm bg-white/10 backdrop-blur-sm p-2 rounded border border-white/20">
                             <div className="flex items-center">
-                              <Check className="w-3 h-3 mr-2 text-green-500" />
-                              <span className="text-gray-700">{action.action}</span>
+                              <Check className="w-3 h-3 mr-2 text-green-300" />
+                              <span className="text-white">{action.action}</span>
                             </div>
-                            <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <div className="flex items-center space-x-2 text-xs text-white/60">
                               {action.officer_name && (
                                 <span className="flex items-center">
                                   <Badge className="w-3 h-3 mr-1" />
@@ -881,10 +881,10 @@ const EmergencyDispatch = ({ profile }) => {
 
         {filteredAlerts.length === 0 && (
           <div className="text-center py-12">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-              <AlertTriangle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Emergency Alerts</h3>
-              <p className="text-gray-600">No emergency alerts match your current filters.</p>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-8">
+              <AlertTriangle className="w-16 h-16 text-white/40 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Emergency Alerts</h3>
+              <p className="text-white/80">No emergency alerts match your current filters.</p>
             </div>
           </div>
         )}
@@ -892,15 +892,15 @@ const EmergencyDispatch = ({ profile }) => {
         {/* Priority Change Modal */}
         {showPriorityModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.changePriority}</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">{t.changePriority}</h3>
               <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-blue-700 mb-1">Tourist:</p>
-                  <p className="font-semibold text-blue-900">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-blue-600">Current Priority: <span className="font-semibold">{selectedAlert?.priority_level}</span></p>
+                <div className="bg-blue-500/20 border border-blue-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
+                  <p className="text-sm text-blue-300 mb-1">Tourist:</p>
+                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
+                  <p className="text-sm text-blue-300">Current Priority: <span className="font-semibold text-white">{selectedAlert?.priority_level}</span></p>
                 </div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">{t.selectPriority}:</label>
+                <label className="block text-sm font-medium text-white/80 mb-3">{t.selectPriority}:</label>
                 <div className="space-y-2">
                   {priorityLevels.map((priority) => (
                     <label key={priority.value} className="flex items-start space-x-3 cursor-pointer">
@@ -912,12 +912,12 @@ const EmergencyDispatch = ({ profile }) => {
                         onChange={(e) => setSelectedPriority(e.target.value)}
                         className="mt-1 text-blue-600 focus:ring-blue-500"
                       />
-                      <div className={`flex-1 p-3 rounded-lg border ${priority.borderColor} ${priority.bgColor}`}>
+                      <div className="flex-1 p-3 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm">
                         <div className="flex items-center justify-between mb-1">
-                          <span className={`font-semibold ${priority.color}`}>{priority.label}</span>
-                          {selectedPriority === priority.value && <Check className="w-4 h-4 text-green-600" />}
+                          <span className="font-semibold text-white">{priority.label}</span>
+                          {selectedPriority === priority.value && <Check className="w-4 h-4 text-green-300" />}
                         </div>
-                        <p className={`text-sm ${priority.color} opacity-80`}>{priority.description}</p>
+                        <p className="text-sm text-white/80">{priority.description}</p>
                       </div>
                     </label>
                   ))}
@@ -943,7 +943,7 @@ const EmergencyDispatch = ({ profile }) => {
                     setShowPriorityModal(false);
                     setSelectedPriority('');
                   }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
                   Cancel
                 </button>
@@ -955,19 +955,19 @@ const EmergencyDispatch = ({ profile }) => {
         {/* Assign Unit Modal */}
         {showAssignModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.assignUnit}</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">{t.assignUnit}</h3>
               <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-blue-700 mb-1">Tourist:</p>
-                  <p className="font-semibold text-blue-900">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-blue-600">{selectedAlert?.tourist_id}</p>
+                <div className="bg-blue-500/20 border border-blue-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
+                  <p className="text-sm text-blue-300 mb-1">Tourist:</p>
+                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
+                  <p className="text-sm text-blue-300">{selectedAlert?.tourist_id}</p>
                 </div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t.selectUnit}:</label>
+                <label className="block text-sm font-medium text-white/80 mb-2">{t.selectUnit}:</label>
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
                 >
                   <option value="">Choose available unit...</option>
                   {availableUnits.map((unit) => (
@@ -995,7 +995,7 @@ const EmergencyDispatch = ({ profile }) => {
                     setShowAssignModal(false);
                     setSelectedUnit('');
                   }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
                   Cancel
                 </button>
@@ -1007,23 +1007,23 @@ const EmergencyDispatch = ({ profile }) => {
         {/* Quick Message Modal */}
         {showMessageModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-2xl">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.sendMessage}</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-lg shadow-2xl border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">{t.sendMessage}</h3>
               <div className="mb-6">
-                <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-green-700 mb-1">Sending to:</p>
-                  <p className="font-semibold text-green-900">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-green-600 font-mono">{selectedAlert?.tourist_phone}</p>
+                <div className="bg-green-500/20 border border-green-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
+                  <p className="text-sm text-green-300 mb-1">Sending to:</p>
+                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
+                  <p className="text-sm text-green-300 font-mono">{selectedAlert?.tourist_phone}</p>
                 </div>
                 
-                <p className="text-sm font-medium text-gray-700 mb-3">Quick Messages:</p>
+                <p className="text-sm font-medium text-white/80 mb-3">Quick Messages:</p>
                 <div className="space-y-2">
                   {Object.entries(t.quickMessages || {}).map(([key, message]) => (
                     <button
                       key={key}
                       onClick={() => sendQuickMessage(message)}
                       disabled={isActionLoading(selectedAlert?.id, 'message')}
-                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 text-sm transition-colors"
+                      className="w-full text-left p-3 bg-white/10 border border-white/30 rounded-lg hover:bg-white/20 disabled:bg-white/5 text-sm transition-colors text-white"
                     >
                       {message}
                     </button>
@@ -1040,7 +1040,7 @@ const EmergencyDispatch = ({ profile }) => {
               <button
                 onClick={() => setShowMessageModal(false)}
                 disabled={isActionLoading(selectedAlert?.id, 'message')}
-                className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                className="w-full bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
               >
                 Close
               </button>
@@ -1051,23 +1051,23 @@ const EmergencyDispatch = ({ profile }) => {
         {/* Contact Family Modal */}
         {showContactModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{t.emergencyContacts}</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">{t.emergencyContacts}</h3>
               <div className="mb-6">
-                <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-4">
-                  <p className="text-sm text-red-700 mb-1">Tourist:</p>
-                  <p className="font-semibold text-red-900">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-red-600">{selectedAlert?.tourist_id}</p>
+                <div className="bg-red-500/20 border border-red-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
+                  <p className="text-sm text-red-300 mb-1">Tourist:</p>
+                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
+                  <p className="text-sm text-red-300">{selectedAlert?.tourist_id}</p>
                 </div>
                 
                 {selectedAlert?.emergency_contacts ? (
                   <div className="space-y-3">
-                    <p className="text-sm font-medium text-gray-700">Emergency Contacts:</p>
+                    <p className="text-sm font-medium text-white/80">Emergency Contacts:</p>
                     {JSON.parse(selectedAlert.emergency_contacts).map((contact, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                        <p className="font-semibold text-gray-900">{contact.name}</p>
-                        <p className="text-sm text-gray-600 mb-1">{contact.relation}</p>
-                        <p className="text-sm text-blue-600 font-mono">{contact.phone}</p>
+                      <div key={index} className="border border-white/30 rounded-lg p-3 bg-white/10 backdrop-blur-sm">
+                        <p className="font-semibold text-white">{contact.name}</p>
+                        <p className="text-sm text-white/80 mb-1">{contact.relation}</p>
+                        <p className="text-sm text-blue-300 font-mono">{contact.phone}</p>
                       </div>
                     ))}
                     
@@ -1079,8 +1079,8 @@ const EmergencyDispatch = ({ profile }) => {
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-gray-500">
-                    <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <div className="text-center py-6 text-white/60">
+                    <Users className="w-12 h-12 mx-auto mb-2 text-white/40" />
                     <p>No emergency contacts available</p>
                   </div>
                 )}
@@ -1108,7 +1108,7 @@ const EmergencyDispatch = ({ profile }) => {
                 <button
                   onClick={() => setShowContactModal(false)}
                   disabled={isActionLoading(selectedAlert?.id, 'contact')}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
                   Close
                 </button>

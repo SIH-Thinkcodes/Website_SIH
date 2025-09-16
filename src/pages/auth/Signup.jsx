@@ -323,12 +323,12 @@ const handleSubmit = async () => {
       {[1, 2, 3].map((stepNum) => (
         <div key={stepNum} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-            step >= stepNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+            step >= stepNum ? 'bg-blue-600 text-white' : 'bg-white/20 text-white/60'
           }`}>
             {step > stepNum ? <CheckCircle className="w-4 h-4" /> : stepNum}
           </div>
           {stepNum < 3 && (
-            <div className={`w-16 h-1 ${step > stepNum ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+            <div className={`w-16 h-1 ${step > stepNum ? 'bg-blue-600' : 'bg-white/20'}`}></div>
           )}
         </div>
       ))}
@@ -336,14 +336,14 @@ const handleSubmit = async () => {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg border border-blue-100">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-lg border border-white/20">
         <div className="text-center mb-8">
           <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="text-white w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Register</h1>
-          <p className="text-slate-600 mt-2">Join the Police Authority System</p>
+          <h1 className="text-2xl font-bold text-white">Register</h1>
+          <p className="text-white/80 mt-2">Join the Police Authority System</p>
           {renderStepIndicator()}
         </div>
 
@@ -351,14 +351,14 @@ const handleSubmit = async () => {
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name *</label>
+              <label className="block text-sm font-semibold text-white/90 mb-2">Full Name *</label>
               <div className="relative">
-                <User className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
+                <User className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                   placeholder="Enter your full name"
                   required
                 />

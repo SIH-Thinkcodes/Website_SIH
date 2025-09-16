@@ -188,19 +188,19 @@ const TouristClusteringDashboard = () => {
 
   const getRiskColor = (risk) => {
     switch (risk) {
-      case 'high': return 'border-red-500 bg-red-100'
-      case 'medium': return 'border-orange-500 bg-orange-100'
-      case 'low': return 'border-yellow-500 bg-yellow-100'
-      default: return 'border-gray-400 bg-gray-100'
+      case 'high': return 'border-red-400/50 bg-red-500/20'
+      case 'medium': return 'border-orange-400/50 bg-orange-500/20'
+      case 'low': return 'border-yellow-400/50 bg-yellow-500/20'
+      default: return 'border-white/40 bg-white/20'
     }
   }
 
   const getGeofenceColor = (alertLevel) => {
     switch (alertLevel) {
-      case 'high': return 'border-red-500'
-      case 'medium': return 'border-orange-500'
-      case 'low': return 'border-yellow-500'
-      default: return 'border-gray-400'
+      case 'high': return 'border-red-400/50'
+      case 'medium': return 'border-orange-400/50'
+      case 'low': return 'border-yellow-400/50'
+      default: return 'border-white/40'
     }
   }
 
@@ -239,22 +239,22 @@ const TouristClusteringDashboard = () => {
   }
 
   const MapVisualization = () => (
-    <div className="bg-white rounded-lg shadow-md border overflow-hidden">
+    <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 border overflow-hidden">
       {/* Map Controls */}
-      <div className="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+      <div className="bg-white/10 backdrop-blur-sm px-4 py-3 border-b border-white/20 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <h3 className="font-medium text-gray-800">Live Tourist Heat Map</h3>
+          <h3 className="font-medium text-white">Live Tourist Heat Map</h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setMapZoom(Math.max(10, mapZoom - 1))}
-              className="p-1 hover:bg-gray-200 rounded"
+              className="p-1 hover:bg-white/30 rounded"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <span className="text-sm text-gray-600">{mapZoom}x</span>
+            <span className="text-sm text-white/80">{mapZoom}x</span>
             <button
               onClick={() => setMapZoom(Math.min(20, mapZoom + 1))}
-              className="p-1 hover:bg-gray-200 rounded"
+              className="p-1 hover:bg-white/30 rounded"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
@@ -262,11 +262,11 @@ const TouristClusteringDashboard = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <button className={`px-3 py-1 rounded-md text-sm text-gray-600 hover:bg-gray-100`}>
+          <button className={`px-3 py-1 rounded-md text-sm text-white/80 hover:bg-white/20`}>
             <Shield className="w-4 h-4 inline mr-1" />
             Zones
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
+          <button className="p-2 hover:bg-white/20 rounded-lg">
             <Layers className="w-4 h-4" />
           </button>
         </div>
@@ -285,8 +285,8 @@ const TouristClusteringDashboard = () => {
 
         {/* Roads/Paths Simulation */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-300 opacity-50 transform -translate-y-1/2"></div>
-          <div className="absolute top-0 bottom-0 left-1/2 w-2 bg-gray-300 opacity-50 transform -translate-x-1/2"></div>
+          <div className="absolute top-1/2 left-0 right-0 h-2 bg-white/30 opacity-50 transform -translate-y-1/2"></div>
+          <div className="absolute top-0 bottom-0 left-1/2 w-2 bg-white/30 opacity-50 transform -translate-x-1/2"></div>
         </div>
 
         {/* Tourist Clusters */}
@@ -338,7 +338,7 @@ const TouristClusteringDashboard = () => {
               }}
               title={`${fence.name}\nType: ${fence.type}\nAlert Level: ${fence.alertLevel}\nRadius: ${fence.radius}m`}
             >
-              <Shield className="w-5 h-5 text-gray-600" />
+              <Shield className="w-5 h-5 text-white/80" />
             </div>
           )
         })}
@@ -375,10 +375,10 @@ const TouristClusteringDashboard = () => {
         {/* Real-time Status */}
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-md">
           <div className="flex items-center space-x-2 mb-1">
-            <div className={`w-2 h-2 rounded-full ${isAutoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${isAutoRefresh ? 'bg-green-500 animate-pulse' : 'bg-white/40'}`}></div>
             <span className="text-xs font-medium">{isAutoRefresh ? 'Live' : 'Paused'}</span>
           </div>
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-white/80">
             {new Date().toLocaleTimeString()}
           </div>
         </div>
@@ -408,23 +408,23 @@ const TouristClusteringDashboard = () => {
 
         {/* Cluster Details Panel */}
         {selectedCluster && (
-          <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
+          <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-md rounded-lg shadow-lg p-4 max-w-sm border border-white/20">
             <div className="flex justify-between items-start mb-3">
-              <h4 className="font-medium text-gray-800">{selectedCluster.area}</h4>
+              <h4 className="font-medium text-white">{selectedCluster.area}</h4>
               <button
                 onClick={() => setSelectedCluster(null)}
-                className="text-gray-400 hover:text-gray-600 text-lg"
+                className="text-white/60 hover:text-white/80 text-lg"
               >
                 ×
               </button>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Tourist Count:</span>
+                <span className="text-white/80">Tourist Count:</span>
                 <span className="font-medium">{selectedCluster.count}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Risk Level:</span>
+                <span className="text-white/80">Risk Level:</span>
                 <span className={`font-medium capitalize ${
                   selectedCluster.risk === 'high' ? 'text-red-600' :
                   selectedCluster.risk === 'medium' ? 'text-orange-600' :
@@ -434,11 +434,11 @@ const TouristClusteringDashboard = () => {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Area Type:</span>
+                <span className="text-white/80">Area Type:</span>
                 <span className="font-medium capitalize">{selectedCluster.type}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Last Update:</span>
+                <span className="text-white/80">Last Update:</span>
                 <span className="font-medium">{selectedCluster.timestamp.toLocaleTimeString()}</span>
               </div>
             </div>
@@ -451,9 +451,9 @@ const TouristClusteringDashboard = () => {
   const AnalyticsView = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Top Tourist Areas */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
-          <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+      <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6">
+        <h3 className="text-lg font-medium text-white mb-4 flex items-center">
+          <TrendingUp className="w-5 h-5 mr-2 text-blue-300" />
           Highest Density Areas
         </h3>
         <div className="space-y-3">
@@ -465,19 +465,19 @@ const TouristClusteringDashboard = () => {
                 <div className="flex items-center space-x-3">
                   <div className={`w-4 h-4 rounded-full ${getIntensityColor(point.count)}`}></div>
                   <div>
-                    <p className="font-medium text-gray-800">{point.area}</p>
-                    <p className="text-sm text-gray-600">{point.count} tourists • {point.type}</p>
+                    <p className="font-medium text-white">{point.area}</p>
+                    <p className="text-sm text-white/80">{point.count} tourists • {point.type}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    point.risk === 'high' ? 'bg-red-100 text-red-700' :
-                    point.risk === 'medium' ? 'bg-orange-100 text-orange-700' :
-                    'bg-green-100 text-green-700'
+                    point.risk === 'high' ? 'bg-red-500/20 text-red-300 border border-red-400/30' :
+                    point.risk === 'medium' ? 'bg-orange-500/20 text-orange-300 border border-orange-400/30' :
+                    'bg-green-500/20 text-green-300 border border-green-400/30'
                   }`}>
                     {point.risk.toUpperCase()}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">#{index + 1}</p>
+                  <p className="text-xs text-white/60 mt-1">#{index + 1}</p>
                 </div>
               </div>
             ))}
@@ -485,25 +485,25 @@ const TouristClusteringDashboard = () => {
       </div>
 
       {/* Active Geofences */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
-          <Shield className="w-5 h-5 mr-2 text-green-600" />
+      <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6">
+        <h3 className="text-lg font-medium text-white mb-4 flex items-center">
+          <Shield className="w-5 h-5 mr-2 text-green-300" />
           Security Zones
         </h3>
         <div className="space-y-3">
           {geofences.map((fence) => (
-            <div key={fence.id} className="p-3 bg-gray-50 rounded-lg">
+            <div key={fence.id} className="p-3 bg-white/10 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-800">{fence.name}</span>
+                <span className="font-medium text-white">{fence.name}</span>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  fence.alertLevel === 'high' ? 'bg-red-100 text-red-700' :
-                  fence.alertLevel === 'medium' ? 'bg-orange-100 text-orange-700' :
-                  'bg-yellow-100 text-yellow-700'
+                  fence.alertLevel === 'high' ? 'bg-red-500/20 text-red-300 border border-red-400/30' :
+                  fence.alertLevel === 'medium' ? 'bg-orange-500/20 text-orange-300 border border-orange-400/30' :
+                  'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
                 }`}>
                   {fence.alertLevel.toUpperCase()}
                 </div>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-white/80">
                 <span>Type: {fence.type}</span>
                 <span>Radius: {fence.radius}m</span>
               </div>
@@ -513,29 +513,29 @@ const TouristClusteringDashboard = () => {
       </div>
 
       {/* Recent Incidents */}
-      <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
-        <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2 text-red-600" />
+      <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 lg:col-span-2">
+        <h3 className="text-lg font-medium text-white mb-4 flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2 text-red-300" />
           Recent Incidents
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {incidents.slice(0, 6).map((incident) => {
             const timeAgo = Math.floor((Date.now() - new Date(incident.timestamp).getTime()) / 60000)
             return (
-              <div key={incident.id} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
+              <div key={incident.id} className="p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg hover:shadow-sm transition-shadow">
                 <div className="flex items-center justify-between mb-2">
                   <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    incident.severity === 'high' ? 'bg-red-100 text-red-700' :
-                    incident.severity === 'medium' ? 'bg-orange-100 text-orange-700' :
-                    'bg-yellow-100 text-yellow-700'
+                    incident.severity === 'high' ? 'bg-red-500/20 text-red-300 border border-red-400/30' :
+                    incident.severity === 'medium' ? 'bg-orange-500/20 text-orange-300 border border-orange-400/30' :
+                    'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
                   }`}>
                     {incident.severity.toUpperCase()} • {incident.type.toUpperCase()}
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-white/60">
                     {timeAgo}m ago
                   </span>
                 </div>
-                <p className="text-sm text-gray-700">{incident.description}</p>
+                <p className="text-sm text-white/80">{incident.description}</p>
               </div>
             )
           })}
@@ -545,13 +545,13 @@ const TouristClusteringDashboard = () => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tourist Monitoring Dashboard</h1>
-            <p className="text-gray-600 mt-1">Real-time crowd monitoring and safety alerts</p>
+            <h1 className="text-2xl font-bold text-white">Tourist Monitoring Dashboard</h1>
+            <p className="text-white/80 mt-1">Real-time crowd monitoring and safety alerts</p>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
@@ -568,13 +568,13 @@ const TouristClusteringDashboard = () => {
             )}
 
             {/* View Toggle */}
-            <div className="flex rounded-lg bg-white border shadow-sm overflow-hidden">
+            <div className="flex rounded-lg bg-white/10 backdrop-blur-md border border-white/20 shadow-sm overflow-hidden">
               <button
                 onClick={() => setSelectedView('heatmap')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   selectedView === 'heatmap'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <MapPin className="w-4 h-4 mr-1 inline" />
@@ -585,7 +585,7 @@ const TouristClusteringDashboard = () => {
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   selectedView === 'analytics'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <Activity className="w-4 h-4 mr-1 inline" />
@@ -597,7 +597,7 @@ const TouristClusteringDashboard = () => {
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+              className="px-3 py-2 border border-white/30 rounded-lg text-sm bg-white/20 backdrop-blur-sm shadow-sm text-white"
             >
               <option value="1h">Last Hour</option>
               <option value="6h">Last 6 Hours</option>
@@ -608,7 +608,7 @@ const TouristClusteringDashboard = () => {
             <select
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+              className="px-3 py-2 border border-white/30 rounded-lg text-sm bg-white/20 backdrop-blur-sm shadow-sm text-white"
             >
               <option value="all">All Levels</option>
               <option value="high">High Risk</option>
@@ -622,7 +622,7 @@ const TouristClusteringDashboard = () => {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
                 isAutoRefresh
                   ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-white/20 text-white/80 hover:bg-white/30'
               }`}
             >
               <RefreshCw className={`w-4 h-4 mr-1 inline ${isAutoRefresh ? 'animate-spin' : ''}`} />
@@ -665,10 +665,10 @@ const TouristClusteringDashboard = () => {
 
         {/* Key Metrics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-blue-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 border border-blue-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Tourists</p>
+                <p className="text-sm text-white/80 mb-1">Total Tourists</p>
                 <p className="text-2xl font-bold text-blue-600">{totalTourists.toLocaleString()}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <TrendingUp className="w-3 h-3 mr-1" />
@@ -679,21 +679,21 @@ const TouristClusteringDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-green-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 border border-green-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Active Areas</p>
+                <p className="text-sm text-white/80 mb-1">Active Areas</p>
                 <p className="text-2xl font-bold text-green-600">{filteredData.length}</p>
-                <p className="text-xs text-gray-500 mt-1">Monitoring zones</p>
+                <p className="text-xs text-white/60 mt-1">Monitoring zones</p>
               </div>
               <MapPin className="text-green-500 w-8 h-8" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-red-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 border border-red-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">High Risk Areas</p>
+                <p className="text-sm text-white/80 mb-1">High Risk Areas</p>
                 <p className="text-2xl font-bold text-red-600">{highRiskAreas}</p>
                 <p className="text-xs text-orange-600 flex items-center mt-1">
                   <AlertTriangle className="w-3 h-3 mr-1" />
@@ -704,12 +704,12 @@ const TouristClusteringDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-purple-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 border border-purple-100">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Security Zones</p>
+                <p className="text-sm text-white/80 mb-1">Security Zones</p>
                 <p className="text-2xl font-bold text-purple-600">{activeGeofences}</p>
-                <p className="text-xs text-gray-500 mt-1">Active monitoring</p>
+                <p className="text-xs text-white/60 mt-1">Active monitoring</p>
               </div>
               <Shield className="text-purple-500 w-8 h-8" />
             </div>
@@ -720,15 +720,15 @@ const TouristClusteringDashboard = () => {
         <div className="space-y-6">
           {/* Advanced Filters Panel */}
           {showAdvancedFilters && (
-            <div className="bg-white rounded-lg shadow-md p-6 border">
-              <h3 className="font-medium text-gray-800 mb-4">Advanced Filters</h3>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 border">
+              <h3 className="font-medium text-white mb-4">Advanced Filters</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Area Type</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Area Type</label>
                   <select
                     value={areaTypeFilter}
                     onChange={(e) => setAreaTypeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+                    className="w-full px-3 py-2 border border-white/30 rounded-lg text-sm bg-white/20 backdrop-blur-sm shadow-sm text-white"
                   >
                     <option value="all">All Types</option>
                     <option value="monument">Monument</option>
@@ -742,11 +742,11 @@ const TouristClusteringDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tourist Count Range</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Tourist Count Range</label>
                   <select
                     value={countRangeFilter}
                     onChange={(e) => setCountRangeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm"
+                    className="w-full px-3 py-2 border border-white/30 rounded-lg text-sm bg-white/20 backdrop-blur-sm shadow-sm text-white"
                   >
                     <option value="all">All Ranges</option>
                     <option value="low">Low (0-100)</option>
@@ -756,7 +756,7 @@ const TouristClusteringDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Actions</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Actions</label>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => {
@@ -764,7 +764,7 @@ const TouristClusteringDashboard = () => {
                         setAreaTypeFilter('all')
                         setCountRangeFilter('all')
                       }}
-                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                      className="px-3 py-2 bg-white/20 text-white/80 rounded-lg text-sm hover:bg-white/30 transition-colors"
                     >
                       Clear All
                     </button>
@@ -785,7 +785,7 @@ const TouristClusteringDashboard = () => {
                   {areaTypeFilter !== 'all' && <span className="ml-2 px-2 py-1 bg-blue-100 rounded">Type: {areaTypeFilter}</span>}
                   {countRangeFilter !== 'all' && <span className="ml-2 px-2 py-1 bg-blue-100 rounded">Count: {countRangeFilter}</span>}
                   {riskFilter === 'all' && areaTypeFilter === 'all' && countRangeFilter === 'all' && (
-                    <span className="ml-2 text-gray-600">No filters applied</span>
+                    <span className="ml-2 text-white/80">No filters applied</span>
                   )}
                 </div>
               </div>
@@ -800,7 +800,7 @@ const TouristClusteringDashboard = () => {
           <div className="flex space-x-3">
             <button 
               onClick={exportData}
-              className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-sm font-medium text-white hover:bg-white/30 shadow-sm transition-colors"
             >
               <Download className="w-4 h-4" />
               <span>Export Data</span>
@@ -810,7 +810,7 @@ const TouristClusteringDashboard = () => {
               className={`flex items-center space-x-2 px-4 py-2 border rounded-lg text-sm font-medium shadow-sm transition-colors ${
                 showAdvancedFilters 
                   ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  : 'bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30'
               }`}
             >
               <Filter className="w-4 h-4" />
@@ -818,16 +818,16 @@ const TouristClusteringDashboard = () => {
             </button>
           </div>
           
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-white/60">
             Last updated: {new Date().toLocaleTimeString()} • System operational
           </div>
         </div>
 
         {/* Footer Information */}
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-4 border border-white/20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-white/80">
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">System Status</h4>
+              <h4 className="font-medium text-white mb-2">System Status</h4>
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -845,7 +845,7 @@ const TouristClusteringDashboard = () => {
             </div>
             
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Data Sources</h4>
+              <h4 className="font-medium text-white mb-2">Data Sources</h4>
               <div className="space-y-1">
                 <div>Crowd Analytics: AI-powered</div>
                 <div>Incident Reports: Live feed</div>
@@ -854,7 +854,7 @@ const TouristClusteringDashboard = () => {
             </div>
             
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Coverage</h4>
+              <h4 className="font-medium text-white mb-2">Coverage</h4>
               <div className="space-y-1">
                 <div>Area: Delhi Tourism Zone</div>
                 <div>Active Sensors: 8 zones</div>

@@ -650,3 +650,110 @@ export const firAPI = {
     return data || [];
   },
 };
+
+// Dashboard API for real-time statistics
+export const dashboardAPI = {
+  // Get dashboard statistics for a police officer
+  async getDashboardStats(officerId) {
+    try {
+      // Get active cases (FIRs that are not closed or rejected)
+      const { data: activeCases, error: activeCasesError } = await supabase
+        .from('fir_reports')
+        .select('id')
+        .eq('officer_id', officerId)
+        .in('status', ['filed', 'under_investigation', 'charges_filed']);
+
+      if (activeCasesError) throw activeCasesError;
+
+      // Get total reports filed by this officer
+      const { data: totalReports, error: totalReportsError } = await supabase
+        .from('fir_reports')
+        .select('id')
+        .eq('officer_id', officerId);
+
+      if (totalReportsError) throw totalReportsError;
+
+      // Get pending tasks (FIRs under investigation)
+      const { data: pendingTasks, error: pendingTasksError } = await supabase
+        .from('fir_reports')
+        .select('id')
+        .eq('officer_id', officerId)
+        .eq('status', 'under_investigation');
+
+      if (pendingTasksError) throw pendingTasksError;
+
+      // Get recent activity (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: recentActivity, error: recentActivityError } = await supabase
+        .from('fir_reports')
+        .select('id, status, created_at')
+        .eq('officer_id', officerId)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (recentActivityError) throw recentActivityError;
+
+      return {
+        activeCases: activeCases?.length || 0,
+        totalReports: totalReports?.length || 0,
+        pendingTasks: pendingTasks?.length || 0,
+        recentActivity: recentActivity || []
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  },
+
+  // Get dashboard statistics for admin (all officers)
+  async getAdminDashboardStats() {
+    try {
+      // Get active cases across all officers
+      const { data: activeCases, error: activeCasesError } = await supabase
+        .from('fir_reports')
+        .select('id')
+        .in('status', ['filed', 'under_investigation', 'charges_filed']);
+
+      if (activeCasesError) throw activeCasesError;
+
+      // Get total reports filed
+      const { data: totalReports, error: totalReportsError } = await supabase
+        .from('fir_reports')
+        .select('id');
+
+      if (totalReportsError) throw totalReportsError;
+
+      // Get pending tasks
+      const { data: pendingTasks, error: pendingTasksError } = await supabase
+        .from('fir_reports')
+        .select('id')
+        .eq('status', 'under_investigation');
+
+      if (pendingTasksError) throw pendingTasksError;
+
+      // Get recent activity (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: recentActivity, error: recentActivityError } = await supabase
+        .from('fir_reports')
+        .select('id, status, created_at, officer_name')
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (recentActivityError) throw recentActivityError;
+
+      return {
+        activeCases: activeCases?.length || 0,
+        totalReports: totalReports?.length || 0,
+        pendingTasks: pendingTasks?.length || 0,
+        recentActivity: recentActivity || []
+      };
+    } catch (error) {
+      console.error('Error fetching admin dashboard stats:', error);
+      throw error;
+    }
+  }
+};

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Shield, Users, CheckCircle, Clock, LogOut, UserCheck, UserX, Eye, X, FileText, Phone, MapPin, Badge as BadgeIcon, Building, AlertCircle, Plane, Calendar, User } from 'lucide-react'
-import { authAPI, travellerAPI, dashboardAPI } from '../../utils/supabase'
+import { authAPI, travellerAPI } from '../../utils/supabase'
 
  
 
@@ -197,15 +197,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
   const [showTravellerModal, setShowTravellerModal] = useState(false);
   
   // Dashboard statistics state
-  const [dashboardStats, setDashboardStats] = useState({
-    activeCases: 0,
-    totalReports: 0,
-    pendingTasks: 0,
-    recentActivity: []
-  })
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [statsError, setStatsError] = useState(null)
-  const [lastUpdated, setLastUpdated] = useState(null)
+  // Stats removed from UI; keep minimal placeholders disabled
+  // Removed stats state (not used)
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
   const [pendingTravellers, setPendingTravellers] = useState([]);
@@ -238,27 +231,11 @@ const AdminDashboard = ({ profile, onLogout }) => {
     }
   }, [error]);
 
-  // Function to fetch dashboard statistics
-  const fetchDashboardStats = async () => {
-    try {
-      setStatsLoading(true)
-      setStatsError(null)
-      
-      const stats = await dashboardAPI.getAdminDashboardStats()
-      setDashboardStats(stats)
-      setLastUpdated(new Date())
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
-      setStatsError('Failed to load dashboard data')
-    } finally {
-      setStatsLoading(false)
-    }
-  }
+  // Stats section removed; keep no-op to preserve structure
+  const fetchDashboardStats = async () => {}
 
-  // Function to refresh dashboard data
-  const refreshDashboard = () => {
-    fetchDashboardStats()
-  }
+  // Function to refresh dashboard data (no-op)
+  // Removed refresh handler (not used)
 
   // Fetch dashboard stats on component mount
   useEffect(() => {
@@ -269,8 +246,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchDashboardStats()
-    }, 30000) // Update every 30 seconds
-
+    }, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -489,82 +465,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-10">
-        {/* Dashboard Stats Section */}
-        <div className="mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-4">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-white/80">Active Cases</p>
-                  {statsLoading ? (
-                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
-                  ) : (
-                    <p className="text-xl lg:text-2xl font-bold text-white">
-                      {statsError ? '—' : dashboardStats.activeCases}
-                    </p>
-                  )}
-                </div>
-                <Shield className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-white/80">Total Reports</p>
-                  {statsLoading ? (
-                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
-                  ) : (
-                    <p className="text-xl lg:text-2xl font-bold text-white">
-                      {statsError ? '—' : dashboardStats.totalReports}
-                    </p>
-                  )}
-                </div>
-                <FileText className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 sm:col-span-2 lg:col-span-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-white/80">Pending Tasks</p>
-                  {statsLoading ? (
-                    <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
-                  ) : (
-                    <p className="text-xl lg:text-2xl font-bold text-white">
-                      {statsError ? '—' : dashboardStats.pendingTasks}
-                    </p>
-                  )}
-                </div>
-                <AlertCircle className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
-              </div>
-            </div>
-          </div>
-
-          {/* Refresh Button and Last Updated */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={refreshDashboard}
-                disabled={statsLoading}
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-white/80 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <Clock className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
-              </button>
-              {lastUpdated && (
-                <span className="text-xs text-white/60">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
-              )}
-            </div>
-            {statsError && (
-              <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-lg">
-                {statsError}
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Dashboard Stats Section removed as requested */}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <aside className="md:col-span-3">

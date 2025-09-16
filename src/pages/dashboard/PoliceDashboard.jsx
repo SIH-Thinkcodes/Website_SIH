@@ -95,7 +95,14 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     { code: 'hindi', name: 'Hindi', native: 'हिन्दी' },
     { code: 'tamil', name: 'Tamil', native: 'தமிழ்' },
     { code: 'gujarati', name: 'Gujarati', native: 'ગુજરાતી' },
-    { code: 'bengali', name: 'Bengali', native: 'বাংলা' }
+    { code: 'bengali', name: 'Bengali', native: 'বাংলা' },
+    { code: 'marathi', name: 'Marathi', native: 'मराठी' },
+    { code: 'telugu', name: 'Telugu', native: 'తెలుగు' },
+    { code: 'kannada', name: 'Kannada', native: 'ಕನ್ನಡ' },
+    { code: 'malayalam', name: 'Malayalam', native: 'മലയാളം' },
+    { code: 'punjabi', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+    { code: 'odia', name: 'Odia', native: 'ଓଡ଼ିଆ' },
+    { code: 'assamese', name: 'Assamese', native: 'অসমীয়া' }
   ]
 
   // Translation object
@@ -254,6 +261,200 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       whatHappensNext: 'এরপর কী হবে?',
       nextStepsText: 'প্রশাসক আপনার পরিচয়পত্র পর্যালোচনা করবেন এবং 24-48 ঘন্টার মধ্যে আপনার অ্যাকাউন্ট অনুমোদন করবেন। অনুমোদিত হলে আপনি ইমেইল বিজ্ঞপ্তি পাবেন।',
       pendingVerification: 'মুলতবি যাচাইকরণ'
+    },
+
+    // Added languages
+    marathi: {
+      dashboard: 'डॅशबोर्ड',
+      touristSearch: 'पर्यटक शोध',
+      touristAnalytics: 'पर्यटक विश्लेषण',
+      emergencyDispatch: 'आपत्कालीन प्रेषण',
+      firGenerator: 'ई-एफआयआर जनरेटर',
+      citizenChat: 'नागरिक सहाय्य चॅट',
+      missingPersons: 'बेपत्ता व्यक्ती नोंद',
+      policePortal: 'पोलीस पोर्टल',
+      officerDashboard: 'अधिकारी डॅशबोर्ड',
+      activeCases: 'सक्रिय प्रकरणे',
+      reportsFiled: 'दाखल अहवाल',
+      pendingTasks: 'प्रलंबित कामे',
+      welcomeToPolicePortal: 'पोलीस पोर्टलवर आपले स्वागत आहे',
+      accountVerified: 'तुमचे खाते पडताळले गेले आहे. सर्व वैशिष्ट्यांना पूर्ण प्रवेश आहे.',
+      officer: 'अधिकारी',
+      badgeStation: 'बॅज / स्टेशन',
+      today: 'आज',
+      verified: 'पडताळले',
+      logout: 'लॉगआऊट',
+      accountUnderReview: 'खाते पुनरावलोकनात',
+      accountReviewText: 'तुमचे खाते प्रशासकाकडून तपासले जात आहे. पडताळणीनंतर पूर्ण प्रवेश मिळेल.',
+      registrationDetails: 'नोंदणी तपशील',
+      name: 'नाव',
+      email: 'ईमेल',
+      badgeNumber: 'बॅज क्रमांक',
+      station: 'स्टेशन',
+      whatHappensNext: 'पुढे काय?',
+      nextStepsText: '२४-४८ तासांत मंजुरीची सूचना ईमेलवर मिळेल.',
+      pendingVerification: 'पडताळणी प्रलंबित'
+    },
+
+    // Removed non-Indian languages and added more Indian languages
+    kannada: {
+      dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+      touristSearch: 'ಪ್ರವಾಸಿ ಹುಡುಕಾಟ',
+      touristAnalytics: 'ಪ್ರವಾಸಿ ವಿಶ್ಲೇಷಣೆ',
+      emergencyDispatch: 'ತುರ್ತು ನಿಯೋಜನೆ',
+      firGenerator: 'ಇ-ಎಫ್‌ಐಆರ್ ಜೆನೆರೇಟರ್',
+      citizenChat: 'ನಾಗರಿಕ ಸಹಾಯ ಚಾಟ್',
+      missingPersons: 'ಕಾಣೆಯಾದವರ ದಾಖಲೆ',
+      policePortal: 'ಪೊಲೀಸ್ ಪೋರ್ಟಲ್',
+      officerDashboard: 'ಅಧಿಕಾರಿ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+      activeCases: 'ಸಕ್ರಿಯ ಪ್ರಕರಣಗಳು',
+      reportsFiled: 'ದಾಖಲಿಸಿದ ವರದಿಗಳು',
+      pendingTasks: 'ಬಾಕಿ ಕೆಲಸಗಳು',
+      welcomeToPolicePortal: 'ಪೊಲೀಸ್ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ',
+      accountVerified: 'ನಿಮ್ಮ ಖಾತೆ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ಎಲ್ಲಾ ವೈಶಿಷ್ಟ್ಯಗಳಿಗೆ ಸಂಪೂರ್ಣ ಪ್ರವೇಶ.',
+      officer: 'ಅಧಿಕಾರಿ',
+      badgeStation: 'ಬ್ಯಾಡ್ಜ್ / ಠಾಣೆ',
+      today: 'ಇಂದು',
+      verified: 'ಪರಿಶೀಲಿತ',
+      logout: 'ಲಾಗ್ ಔಟ್',
+      accountUnderReview: 'ಖಾತೆ ಪರಿಶೀಲನೆಯಲ್ಲಿ',
+      accountReviewText: 'ಅಡ್ಮಿನ್ ಪರಿಶೀಲನೆಯ ನಂತರ ಪೂರ್ಣ ಪ್ರವೇಶ ದೊರೆಯುತ್ತದೆ.',
+      registrationDetails: 'ನೋಂದಣಿ ವಿವರಗಳು',
+      name: 'ಹೆಸರು',
+      email: 'ಇ-ಮೇಲ್',
+      badgeNumber: 'ಬ್ಯಾಡ್ಜ್ ಸಂಖ್ಯೆ',
+      station: 'ಥಾಣೆ',
+      whatHappensNext: 'ಮುಂದೇನು?',
+      nextStepsText: '24–48 ಗಂಟೆಗಳಲ್ಲಿ ಇಮೇಲ್ ಮೂಲಕ ಮಾಹಿತಿ ಬರುತ್ತದೆ.',
+      pendingVerification: 'ಪರಿಶೀಲನೆ ಬಾಕಿ'
+    },
+
+    malayalam: {
+      dashboard: 'ഡാഷ്ബോർഡ്',
+      touristSearch: 'സഞ്ചാരിയെ തിരയുക',
+      touristAnalytics: 'സഞ്ചാരികളുടെ വിശകലനം',
+      emergencyDispatch: 'അടിയന്തര ഡിസ്‌പാച്ച്',
+      firGenerator: 'ഇ-എഫ്ഐആർ ജനറേറ്റർ',
+      citizenChat: 'പൗരൻ സഹായ ചാറ്റ്',
+      missingPersons: 'അപരിചിതരായവരുടെ രജിസ്റ്റർ',
+      policePortal: 'പോലീസ് പോർട്ടൽ',
+      officerDashboard: 'ഓഫീസർ ഡാഷ്ബോർഡ്',
+      activeCases: 'സജീവ കേസുകൾ',
+      reportsFiled: 'ഫയൽ ചെയ്ത റിപ്പോർട്ടുകൾ',
+      pendingTasks: 'ബാക്കിയുള്ള ജോലികൾ',
+      welcomeToPolicePortal: 'പോലീസ് പോർട്ടലിലേക്ക് സ്വാഗതം',
+      accountVerified: 'നിങ്ങളുടെ അക്കൗണ്ട് സ്ഥിരീകരിച്ചു. മുഴുവൻ ആക്‌സസ് ലഭ്യമാണ്.',
+      officer: 'ഓഫീസർ',
+      badgeStation: 'ബാഡ്ജ് / സ്റ്റേഷൻ',
+      today: 'ഇന്ന്',
+      verified: 'സ്ഥിരീകരിച്ചു',
+      logout: 'ലോഗൗട്ട്',
+      accountUnderReview: 'അക്കൗണ്ട് പരിശോധനയിൽ',
+      accountReviewText: 'അഡ്മിൻ പരിശോധിച്ച ശേഷം പൂർണ്ണ ആക്‌സസ് ലഭിക്കും.',
+      registrationDetails: 'രജിസ്ട്രേഷൻ വിശദാംശങ്ങൾ',
+      name: 'പേര്',
+      email: 'ഇമെയിൽ',
+      badgeNumber: 'ബാഡ്ജ് നമ്പർ',
+      station: 'സ്റ്റേഷൻ',
+      whatHappensNext: 'അടുത്തത് എന്ത്?',
+      nextStepsText: '24–48 മണിക്കൂറിനുള്ളിൽ ഇമെയിൽ വഴി അറിയിക്കും.',
+      pendingVerification: 'സ്ഥിരീകരണം ബാക്കിയാണ്'
+    },
+
+    punjabi: {
+      dashboard: 'ਡੈਸ਼ਬੋਰਡ',
+      touristSearch: 'ਸੈਲਾਨੀ ਖੋਜ',
+      touristAnalytics: 'ਸੈਲਾਨੀ ਵਿਸ਼ਲੇਸ਼ਣ',
+      emergencyDispatch: 'ਐਮਰਜੈਂਸੀ ਡਿਸਪੈਚ',
+      firGenerator: 'ਈ-ਐੱਫਆਈਆਰ ਜਨਰੇਟਰ',
+      citizenChat: 'ਨਾਗਰਿਕ ਸਹਾਇਤਾ ਚੈਟ',
+      missingPersons: 'ਲਾਪਤਾ ਵਿਅਕਤੀਆਂ ਦੀ ਰਜਿਸਟਰੀ',
+      policePortal: 'ਪੁਲਿਸ ਪੋਰਟਲ',
+      officerDashboard: 'ਅਫਸਰ ਡੈਸ਼ਬੋਰਡ',
+      activeCases: 'ਸਕਰੀਆ ਕੇਸ',
+      reportsFiled: 'ਦਾਖਲ ਰਿਪੋਰਟਾਂ',
+      pendingTasks: 'ਬਕਾਇਆ ਕੰਮ',
+      welcomeToPolicePortal: 'ਪੁਲਿਸ ਪੋਰਟਲ ਵਿੱਚ ਸਵਾਗਤ ਹੈ',
+      accountVerified: 'ਤੁਹਾਡਾ ਖਾਤਾ ਪ੍ਰਮਾਣਿਤ ਹੈ। ਸਭ ਫੀਚਰਾਂ ਦੀ ਪਹੁੰਚ ਹੈ।',
+      officer: 'ਅਧਿਕਾਰੀ',
+      badgeStation: 'ਬੈਜ / ਥਾਣਾ',
+      today: 'ਅੱਜ',
+      verified: 'ਪ੍ਰਮਾਣਿਤ',
+      logout: 'ਲਾੱਗ ਆਊਟ',
+      accountUnderReview: 'ਖਾਤਾ ਸਮੀਖਿਆ ਵਿਚ',
+      accountReviewText: 'ਅਡਮਿਨ ਮਨਜ਼ੂਰੀ ਤੋਂ ਬਾਅਦ ਪੂਰੀ ਪਹੁੰਚ ਮਿਲੇਗੀ।',
+      registrationDetails: 'ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਵੇਰਵੇ',
+      name: 'ਨਾਮ',
+      email: 'ਈਮੇਲ',
+      badgeNumber: 'ਬੈਜ ਨੰਬਰ',
+      station: 'ਥਾਣਾ',
+      whatHappensNext: 'ਅਗਲਾ ਕੀ?',
+      nextStepsText: '24–48 ਘੰਟਿਆਂ ਵਿੱਚ ਈਮੇਲ ਰਾਹੀਂ ਸੂਚਨਾ ਆਵੇਗੀ।',
+      pendingVerification: 'ਪ੍ਰਮਾਣਿਤੀਕਰਨ ਬਕਾਇਆ'
+    },
+
+    odia: {
+      dashboard: 'ଡ୍ୟାଶବୋର୍ଡ',
+      touristSearch: 'ପର୍ଯ୍ଯଟକ ଖୋଜ',
+      touristAnalytics: 'ପର୍ଯ୍ଯଟକ ବିଶ୍ଳେଷଣ',
+      emergencyDispatch: 'ଜରୁରୀ ଡିସ୍ପାଚ୍',
+      firGenerator: 'ଇ-ଏଫ୍‌ଆଇଆର୍ ଜେନେରେଟର୍',
+      citizenChat: 'ନାଗରିକ ସହାୟତା ଚ୍ୟାଟ୍',
+      missingPersons: 'ନିଖୋଜ ବ୍ୟକ୍ତି ରେଜିଷ୍ଟ୍ରି',
+      policePortal: 'ପୋଲିସ ପୋର୍ଟାଲ୍',
+      officerDashboard: 'ଅଫିସର୍ ଡ୍ୟାଶବୋର୍ଡ',
+      activeCases: 'ସକ୍ରିୟ କେସ୍',
+      reportsFiled: 'ଦାଖଲ ରିପୋର୍ଟ',
+      pendingTasks: 'ବକେୟା କାମ',
+      welcomeToPolicePortal: 'ପୋଲିସ ପୋର୍ଟାଲକୁ ସ୍ବାଗତ',
+      accountVerified: 'ଆପଣଙ୍କର ଖାତା ଯାଞ୍ଚିତ। ସମସ୍ତ ବୈଶିଷ୍ଟ୍ୟରେ ପ୍ରବେଶ ଅଛି।',
+      officer: 'ଅଫିସର୍',
+      badgeStation: 'ବ୍ୟାଜ୍ / ଥାନା',
+      today: 'ଆଜି',
+      verified: 'ଯାଞ୍ଚିତ',
+      logout: 'ଲଗ୍ ଆଉଟ୍',
+      accountUnderReview: 'ଖାତା ପରିଚ୍ୟାଳନାରେ',
+      accountReviewText: 'ଅନୁମୋଦନ ପରେ ପୂର୍ଣ୍ଣ ପ୍ରବେଶ ମିଳିବ।',
+      registrationDetails: 'ନନ୍ଦିକରଣ ବିବରଣୀ',
+      name: 'ନାମ',
+      email: 'ଇମେଲ୍',
+      badgeNumber: 'ବ୍ୟାଜ୍ ନଂ',
+      station: 'ଥାନା',
+      whatHappensNext: 'ପରେ କଣ?',
+      nextStepsText: '24–48 ଘଣ୍ଟାରେ ଇମେଲ୍ ଆସିବ।',
+      pendingVerification: 'ଯାଞ୍ଚ ବକେୟା'
+    },
+
+    assamese: {
+      dashboard: 'ডেশব’ৰ্ড',
+      touristSearch: 'পর্যটক সন্ধান',
+      touristAnalytics: 'পর্যটক বিশ্লেষণ',
+      emergencyDispatch: 'জৰুৰী প্ৰেৰণ',
+      firGenerator: 'ই-এফআইআৰ জেনেৰেটৰ',
+      citizenChat: 'নাগরিক সহায়তা চেট',
+      missingPersons: 'হেৰাই যোৱা লোকৰ নিবন্ধন',
+      policePortal: 'পুলিচ প’ৰ্টেল',
+      officerDashboard: 'অফিচাৰ ডেশব’ৰ্ড',
+      activeCases: 'সক্রিয় কেচ',
+      reportsFiled: 'দাখিল প্ৰতিবেদন',
+      pendingTasks: 'বাকী কাম',
+      welcomeToPolicePortal: 'পুলিচ প’ৰ্টেলত স্বাগতম',
+      accountVerified: 'আপোনাৰ একাউন্ট যাচাই কৰা হৈছে। সকলো সুবিধালৈ অভিগম আছে।',
+      officer: 'অফিচাৰ',
+      badgeStation: 'বেজ / থান',
+      today: 'আজি',
+      verified: 'যাচাই',
+      logout: 'লগত নোখা',
+      accountUnderReview: 'একাউন্ট পৰ্যালোচনাত',
+      accountReviewText: 'অনুমোদনৰ পিছত পূৰ্ণ অভিগম পাম।',
+      registrationDetails: 'নিবন্ধনৰ বিৱৰণ',
+      name: 'নাম',
+      email: 'ইমেইল',
+      badgeNumber: 'বেজ নম্বৰ',
+      station: 'থান',
+      whatHappensNext: 'পিছত কি?',
+      nextStepsText: '২৪–৪৮ ঘণ্টাৰ ভিতৰত ইমেইল আহিব।',
+      pendingVerification: 'যাচাই বাকী'
     }
   }
 
@@ -382,7 +583,7 @@ const renderPage = () => {
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 lg:p-4 sm:col-span-2 lg:col-span-1 border border-white/20">
             <p className="text-xs text-white/60">{t.today}</p>
-            <p className="font-medium text-white text-sm lg:text-base">{new Date().toLocaleDateString()} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            <p className="font-medium text-white text-sm lg:text-base">{new Date().toLocaleDateString()} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
           </div>
         </div>
       </div>
@@ -571,7 +772,7 @@ const renderPage = () => {
             <div className="hidden sm:flex items-center space-x-4 text-sm text-white/80">
               <span>{new Date().toLocaleDateString()}</span>
               <span>•</span>
-              <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
               {/* Language Selector */}
               <div className="relative">
                 <select

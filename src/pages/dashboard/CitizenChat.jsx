@@ -292,10 +292,10 @@ const PoliceInterface = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="text-white/80">Loading citizens...</span>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 px-6 py-4 shadow-xl flex items-center space-x-3">
+          <div className="w-8 h-8 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
+          <span className="text-white/90">Loading citizens...</span>
         </div>
       </div>
     );

@@ -792,7 +792,7 @@ const FIRGenerator = () => {
             {/* Officer Information */}
             <div className="mt-6 pt-6 border-t border-white/20">
               <h4 className="font-semibold text-white mb-2">Filed By</h4>
-              <div className="bg-blue-50 rounded-lg p-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                 <p className="text-white">
                   <strong>{selectedFIR.officer_name}</strong> (Badge: {selectedFIR.officer_badge})<br />
                   Station: {selectedFIR.officer_station}<br />

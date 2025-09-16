@@ -1,33 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
 import { 
-  Phone, 
-  MapPin, 
-  Clock, 
-  AlertTriangle, 
-  User, 
-  CheckCircle, 
-  UserCheck, 
-  MessageSquare,
-  Users,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw,
-  Eye,
-  PhoneCall,
-  Filter,
-  Search,
-  Globe,
-  Check,
-  X,
-  Loader,
-  Shield,
-  ChevronDown,
-  Badge,
-  Activity
+  Phone, MapPin, Clock, AlertTriangle, User, CheckCircle, 
+  UserCheck, MessageSquare, Users, ArrowUp, RefreshCw, 
+  PhoneCall, Filter, Search, Globe, Check, X, Loader, 
+  Shield, Badge, Activity, Bell
 } from 'lucide-react';
 
-// Multilingual translations
+// Multilingual translations (unchanged)
 const translations = {
   en: {
     title: "Emergency Dispatch Center",
@@ -68,6 +48,9 @@ const translations = {
     handledBy: "Currently Handled by",
     lastActionBy: "Last Action by",
     emergencyContacts: "Emergency Contacts",
+    emergencyAlert: "EMERGENCY ALERT",
+    newEmergencyReceived: "NEW EMERGENCY RECEIVED",
+    acknowledgeToClose: "Click ACKNOWLEDGE to close this alert",
     quickMessages: {
       help: "Help is on the way. Please stay calm and remain at your current location.",
       safe: "You are safe now. Police are nearby. Please follow officer instructions.",
@@ -113,11 +96,9 @@ const EmergencyDispatch = ({ profile }) => {
   const [customMessage, setCustomMessage] = useState('');
   const [language, setLanguage] = useState('en');
   const [notification, setNotification] = useState(null);
-  
-  // Loading states for actions
+  const [emergencyPopup, setEmergencyPopup] = useState(null);
+  const [popupVisible, setPopupVisible] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
-  
-  // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -125,18 +106,13 @@ const EmergencyDispatch = ({ profile }) => {
 
   const t = translations[language] || translations.en;
 
-  // Available units for assignment
+  // Available units for assignment (unchanged)
   const availableUnits = [
-    'Unit-01 (Patrol Car)',
-    'Unit-02 (Motorcycle)',
-    'Unit-03 (Emergency Response)',
-    'Unit-04 (Beach Patrol)',
-    'Unit-05 (Tourist Police)',
-    'Medical Unit-01',
-    'Rescue Unit-01'
+    'Unit-01 (Patrol Car)', 'Unit-02 (Motorcycle)', 'Unit-03 (Emergency Response)',
+    'Unit-04 (Beach Patrol)', 'Unit-05 (Tourist Police)', 'Medical Unit-01', 'Rescue Unit-01'
   ];
 
-  // Priority levels with descriptions
+  // Priority levels with descriptions (unchanged)
   const priorityLevels = [
     { value: 'Critical', label: 'Critical', description: 'Life-threatening emergency requiring immediate response', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200' },
     { value: 'High', label: 'High', description: 'Serious situation requiring urgent attention', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
@@ -144,7 +120,7 @@ const EmergencyDispatch = ({ profile }) => {
     { value: 'Low', label: 'Low', description: 'Non-urgent situation, routine response', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200' }
   ];
 
-  // Priority colors
+  // Utility functions (unchanged)
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
       case 'critical': return 'bg-red-500/20 text-red-300 border-red-400/30';
@@ -155,7 +131,6 @@ const EmergencyDispatch = ({ profile }) => {
     }
   };
 
-  // Status colors
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'new': return 'bg-red-600 text-white';
@@ -168,7 +143,6 @@ const EmergencyDispatch = ({ profile }) => {
     }
   };
 
-  // Alert type icons
   const getAlertIcon = (type) => {
     switch (type?.toLowerCase()) {
       case 'medical emergency': return '🚑';
@@ -183,23 +157,54 @@ const EmergencyDispatch = ({ profile }) => {
 
   useEffect(() => {
     loadAlerts();
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('emergency_alerts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_alerts' }, () => {
-        loadAlerts();
-      })
-      .subscribe();
+
+    // Set up Supabase real-time subscription
+    const channel = supabase
+      .channel('realtime-emergency-alerts')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'emergency_alerts',
+          filter: "status=eq.New"
+        },
+        (payload) => {
+          console.log('Real-time INSERT received:', JSON.stringify(payload, null, 2));
+          if (payload.eventType === 'INSERT' && payload.new && payload.new.status === 'New') {
+            console.log('Setting popup for new alert:', payload.new);
+            setEmergencyPopup(payload.new);
+            setPopupVisible(true);
+            loadAlerts(); // Refresh alerts after setting popup
+          } else {
+            console.warn('Unexpected payload or status:', payload);
+          }
+        }
+      )
+      .subscribe((status, error) => {
+        console.log('Subscription status:', status);
+        if (error) {
+          console.error('Subscription error:', error);
+          showNotification('Failed to subscribe to real-time alerts', 'error');
+        }
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to emergency_alerts real-time updates');
+        }
+      });
+
+    // Debug subscription state
+    console.log('Initializing subscription for emergency_alerts');
 
     return () => {
-      subscription.unsubscribe();
+      console.log('Cleaning up subscription for realtime-emergency-alerts');
+      supabase.removeChannel(channel);
     };
   }, []);
 
-  // Apply filters whenever alerts or filter criteria change
   useEffect(() => {
+    console.log('Popup state:', { popupVisible, emergencyPopup });
     applyFilters();
-  }, [alerts, statusFilter, typeFilter, priorityFilter, searchTerm]);
+  }, [alerts, statusFilter, typeFilter, priorityFilter, searchTerm, popupVisible, emergencyPopup]);
 
   const loadAlerts = async () => {
     try {
@@ -209,9 +214,19 @@ const EmergencyDispatch = ({ profile }) => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      console.log('Loaded alerts:', data);
       setAlerts(data || []);
+
+      // Fallback: Trigger popup for new alerts if subscription fails
+      const newAlert = data?.find(alert => alert.status === 'New' && !popupVisible);
+      if (newAlert && !emergencyPopup) {
+        console.log('Fallback: Triggering popup for new alert:', newAlert);
+        setEmergencyPopup(newAlert);
+        setPopupVisible(true);
+      }
     } catch (error) {
-      console.error('Error loading alerts:', error);
+      console.error('Error loading alerts:', error.message);
+      showNotification('Error loading alerts', 'error');
     } finally {
       setLoading(false);
     }
@@ -219,33 +234,105 @@ const EmergencyDispatch = ({ profile }) => {
 
   const applyFilters = () => {
     let filtered = [...alerts];
-
-    // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(alert => alert.status.toLowerCase() === statusFilter);
+      filtered = filtered.filter(alert => alert.status?.toLowerCase() === statusFilter);
     }
-
-    // Type filter
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(alert => alert.alert_type.toLowerCase() === typeFilter);
+      filtered = filtered.filter(alert => alert.alert_type?.toLowerCase() === typeFilter);
     }
-
-    // Priority filter
     if (priorityFilter !== 'all') {
-      filtered = filtered.filter(alert => alert.priority_level.toLowerCase() === priorityFilter);
+      filtered = filtered.filter(alert => alert.priority_level?.toLowerCase() === priorityFilter);
     }
-
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(alert => 
-        alert.tourist_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        alert.tourist_id.toLowerCase().includes(searchTerm.toLowerCase())
+        alert.tourist_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        alert.tourist_id?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     setFilteredAlerts(filtered);
   };
 
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const acknowledgeEmergencyPopup = async () => {
+    if (!emergencyPopup) return;
+    setLoadingState(emergencyPopup.id, 'popup-acknowledge', true);
+    try {
+      const updateData = {
+        status: 'Acknowledged',
+        acknowledged_at: new Date().toISOString(),
+        current_handling_officer_id: profile?.id,
+        current_handling_officer_name: profile?.name,
+        last_action_by_officer_id: profile?.id,
+        last_action_by_officer_name: profile?.name,
+        last_action_timestamp: new Date().toISOString(),
+        response_actions: [
+          ...(emergencyPopup.response_actions || []),
+          {
+            action: 'Status Changed to Acknowledged',
+            officer_id: profile?.id,
+            officer_name: profile?.name,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      const { error } = await supabase
+        .from('emergency_alerts')
+        .update(updateData)
+        .eq('id', emergencyPopup.id);
+
+      if (error) throw error;
+      console.log('Popup acknowledged, closing...');
+      setPopupVisible(false);
+      setEmergencyPopup(null);
+      loadAlerts();
+      showNotification(t.statusUpdated, 'success');
+
+      if (typeof window !== 'undefined' && 'Audio' in window) {
+        try {
+          const audio = new Audio('/sounds/alert.wav');
+          audio.play().catch(e => console.log('Audio playback failed:', e));
+        } catch (e) {
+          console.log('Audio not supported');
+        }
+      }
+    } catch (error) {
+      console.error('Error acknowledging emergency:', error.message);
+      showNotification('Error acknowledging emergency', 'error');
+    } finally {
+      setLoadingState(emergencyPopup.id, 'popup-acknowledge', false);
+    }
+  };
+
+  // Test function to trigger popup manually
+  const testPopup = () => {
+    const testAlert = {
+      id: 'test-id',
+      tourist_name: 'Emily Chen',
+      tourist_id: 'TID002',
+      tourist_phone: '+91-9123456789',
+      tourist_nationality: 'Singapore',
+      alert_type: 'SOS',
+      priority_level: 'Critical',
+      location_address: '123 Test St',
+      alert_message: 'Test emergency',
+      created_at: new Date().toISOString(),
+      status: 'New'
+    };
+    console.log('Testing popup with:', testAlert);
+    setEmergencyPopup(testAlert);
+    setPopupVisible(true);
+  };
+
+  // Remaining state management and action functions (unchanged)
   const setLoadingState = (alertId, action, isLoading) => {
     setActionLoading(prev => ({
       ...prev,
@@ -257,6 +344,7 @@ const EmergencyDispatch = ({ profile }) => {
     return actionLoading[`${alertId}-${action}`] || false;
   };
 
+  // Remaining action functions (assignUnit, changePriority, etc.) unchanged
   const updateAlertWithOfficerInfo = async (alertId, updateData, actionDescription) => {
     const officerInfo = {
       current_handling_officer_id: profile?.id,
@@ -266,7 +354,6 @@ const EmergencyDispatch = ({ profile }) => {
       last_action_timestamp: new Date().toISOString()
     };
 
-    // Add officer info to response actions
     const currentAlert = alerts.find(a => a.id === alertId);
     const responseActions = currentAlert?.response_actions || [];
     
@@ -287,13 +374,12 @@ const EmergencyDispatch = ({ profile }) => {
       response_actions: updatedActions
     };
 
-    delete finalUpdateData.actionData; // Remove the temporary actionData
+    delete finalUpdateData.actionData;
     return finalUpdateData;
   };
 
   const updateAlertStatus = async (alertId, newStatus, additionalData = {}) => {
     setLoadingState(alertId, 'acknowledge', true);
-    
     try {
       const updateData = {
         status: newStatus,
@@ -308,21 +394,18 @@ const EmergencyDispatch = ({ profile }) => {
       }
 
       const finalUpdateData = await updateAlertWithOfficerInfo(alertId, updateData, `Status Changed to ${newStatus}`);
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('emergency_alerts')
         .update(finalUpdateData)
-        .eq('id', alertId);
+        .eq('id', alertId)
+        .select();
 
       if (error) throw error;
-
-      console.log('Alert updated successfully:', data);
-      
       await loadAlerts();
       showNotification(t.statusUpdated, 'success');
     } catch (error) {
-      console.error('Error updating alert:', error);
-      showNotification('Error updating status', 'error');
+      console.error('Error updating alert:', error.message);
+      showNotification('Error updating status: ' + error.message, 'error');
     } finally {
       setLoadingState(alertId, 'acknowledge', false);
     }
@@ -330,9 +413,7 @@ const EmergencyDispatch = ({ profile }) => {
 
   const changePriority = async () => {
     if (!selectedAlert || !selectedPriority) return;
-    
     setLoadingState(selectedAlert.id, 'priority', true);
-    
     try {
       const updateData = {
         priority_level: selectedPriority,
@@ -355,13 +436,12 @@ const EmergencyDispatch = ({ profile }) => {
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
-      
       await loadAlerts();
       setShowPriorityModal(false);
       setSelectedPriority('');
       showNotification(t.priorityChanged, 'success');
     } catch (error) {
-      console.error('Error changing priority:', error);
+      console.error('Error changing priority:', error.message);
       showNotification('Error changing priority', 'error');
     } finally {
       setLoadingState(selectedAlert.id, 'priority', false);
@@ -370,9 +450,7 @@ const EmergencyDispatch = ({ profile }) => {
 
   const assignUnit = async () => {
     if (!selectedAlert || !selectedUnit) return;
-    
     setLoadingState(selectedAlert.id, 'assign', true);
-
     try {
       const updateData = {
         status: 'Assigned',
@@ -395,13 +473,12 @@ const EmergencyDispatch = ({ profile }) => {
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
-      
       await loadAlerts();
       setShowAssignModal(false);
       setSelectedUnit('');
       showNotification(t.unitAssigned, 'success');
     } catch (error) {
-      console.error('Error assigning unit:', error);
+      console.error('Error assigning unit:', error.message);
       showNotification('Error assigning unit', 'error');
     } finally {
       setLoadingState(selectedAlert.id, 'assign', false);
@@ -410,12 +487,9 @@ const EmergencyDispatch = ({ profile }) => {
 
   const sendQuickMessage = async (message) => {
     if (!selectedAlert) return;
-    
     setLoadingState(selectedAlert.id, 'message', true);
-
     try {
       console.log(`Sending message to ${selectedAlert.tourist_phone}: ${message}`);
-      
       const updateData = {
         actionData: {
           message: message,
@@ -436,12 +510,11 @@ const EmergencyDispatch = ({ profile }) => {
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
-
       await loadAlerts();
       setShowMessageModal(false);
       showNotification(`${t.messageSent} (${selectedAlert.tourist_phone})`, 'success');
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending message:', error.message);
       showNotification('Error sending message', 'error');
     } finally {
       setLoadingState(selectedAlert.id, 'message', false);
@@ -450,14 +523,10 @@ const EmergencyDispatch = ({ profile }) => {
 
   const contactEmergencyContacts = async () => {
     if (!selectedAlert) return;
-    
     setLoadingState(selectedAlert.id, 'contact', true);
-
     try {
       console.log(`Contacting emergency contacts for ${selectedAlert.tourist_name}`);
-      
       const contacts = selectedAlert?.emergency_contacts ? JSON.parse(selectedAlert.emergency_contacts) : [];
-      
       const updateData = {
         actionData: {
           contacts: contacts,
@@ -478,12 +547,11 @@ const EmergencyDispatch = ({ profile }) => {
         .eq('id', selectedAlert.id);
 
       if (error) throw error;
-
       await loadAlerts();
       setShowContactModal(false);
       showNotification(`${t.familyContacted} (${contacts.length} contacts)`, 'success');
     } catch (error) {
-      console.error('Error contacting family:', error);
+      console.error('Error contacting family:', error.message);
       showNotification('Error contacting emergency contacts', 'error');
     } finally {
       setLoadingState(selectedAlert.id, 'contact', false);
@@ -492,11 +560,9 @@ const EmergencyDispatch = ({ profile }) => {
 
   const callTourist = async (phone) => {
     setLoadingState(selectedAlert?.id || 'call', 'call', true);
-    
     try {
       console.log(`Initiating call to tourist: ${phone}`);
       window.open(`tel:${phone}`);
-      
       if (selectedAlert) {
         const updateData = {
           actionData: {
@@ -511,31 +577,21 @@ const EmergencyDispatch = ({ profile }) => {
           `Called Tourist: ${phone}`
         );
 
-        const { data: updatedData, error } = await supabase
+        const { error } = await supabase
           .from('emergency_alerts')
           .update({ response_actions: finalUpdateData.response_actions })
-          .eq('id', selectedAlert.id)
-          .select();
+          .eq('id', selectedAlert.id);
 
         if (error) throw error;
         await loadAlerts();
       }
-      
       showNotification(`Calling ${phone}`, 'success');
     } catch (error) {
+      console.error('Error initiating call:', error.message);
       showNotification('Error initiating call', 'error');
     } finally {
       setLoadingState(selectedAlert?.id || 'call', 'call', false);
     }
-  };
-
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
-  };
-
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
   };
 
   if (loading) {
@@ -550,7 +606,82 @@ const EmergencyDispatch = ({ profile }) => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Test Button for Popup */}
+      <div className="p-4">
+        <button
+          onClick={testPopup}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+        >
+          Test Popup
+        </button>
+      </div>
+
+      {/* Emergency Alert Popup */}
+      {popupVisible && emergencyPopup && (
+        <div className="fixed inset-0 bg-red-600 z-[1000] flex items-center justify-center animate-pulse">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 p-8 border-4 border-red-600">
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center mb-4">
+                <Bell className="w-16 h-16 text-red-600 animate-bounce mr-4" />
+                <div>
+                  <h1 className="text-4xl font-bold text-red-600 mb-2">{t.emergencyAlert}</h1>
+                  <p className="text-xl text-red-500">{t.newEmergencyReceived}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 mb-6">
+              <div className="flex items-start space-x-4">
+                <span className="text-4xl">{getAlertIcon(emergencyPopup.alert_type)}</span>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-red-800 mb-2">{emergencyPopup.tourist_name}</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-red-700">
+                    <div>
+                      <p><strong>ID:</strong> {emergencyPopup.tourist_id}</p>
+                      <p><strong>Phone:</strong> {emergencyPopup.tourist_phone}</p>
+                      <p><strong>Nationality:</strong> {emergencyPopup.tourist_nationality}</p>
+                    </div>
+                    <div>
+                      <p><strong>Type:</strong> {emergencyPopup.alert_type}</p>
+                      <p><strong>Priority:</strong> <span className="font-bold text-red-800">{emergencyPopup.priority_level}</span></p>
+                      <p><strong>Time:</strong> {formatTime(emergencyPopup.created_at)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-red-800"><strong>Location:</strong></p>
+                    <p className="text-red-700 text-sm">{emergencyPopup.location_address}</p>
+                  </div>
+                  <div className="mt-4 bg-red-100 p-3 rounded border border-red-200">
+                    <p className="text-red-800"><strong>Message:</strong></p>
+                    <p className="text-red-700">{emergencyPopup.alert_message}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-600 mb-6 text-lg">{t.acknowledgeToClose}</p>
+              <button
+                onClick={acknowledgeEmergencyPopup}
+                disabled={isActionLoading(emergencyPopup.id, 'popup-acknowledge')}
+                className="bg-red-600 text-white px-12 py-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-bold text-xl flex items-center justify-center mx-auto transition-colors"
+              >
+                {isActionLoading(emergencyPopup.id, 'popup-acknowledge') ? (
+                  <>
+                    <Loader className="w-6 h-6 mr-3 animate-spin" />
+                    {t.acknowledging}
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-6 h-6 mr-3" />
+                    {t.acknowledge.toUpperCase()}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-3 ${
@@ -563,8 +694,8 @@ const EmergencyDispatch = ({ profile }) => {
         </div>
       )}
 
+      {/* Remaining JSX (header, filters, alerts list, modals) unchanged */}
       <div className="p-6">
-        {/* Header */}
         <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -576,12 +707,20 @@ const EmergencyDispatch = ({ profile }) => {
                 <span className="text-white/80">New: <span className="font-semibold text-orange-300">{filteredAlerts.filter(a => a.status === 'New').length}</span></span>
               </div>
             </div>
-            
-            {/* Language Selector */}
-
+            <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
+              <Globe className="w-4 h-4 text-white/80" />
+              <select 
+                value={language} 
+                onChange={(e) => setLanguage(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-white"
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="ta">தமிழ்</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
           </div>
-
-          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-white/60" />
@@ -593,7 +732,6 @@ const EmergencyDispatch = ({ profile }) => {
                 className="w-full pl-10 pr-4 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
               />
             </div>
-            
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -606,7 +744,6 @@ const EmergencyDispatch = ({ profile }) => {
               <option value="in progress">{t.inProgress}</option>
               <option value="resolved">{t.resolved}</option>
             </select>
-
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -620,7 +757,6 @@ const EmergencyDispatch = ({ profile }) => {
               <option value="sos">{t.sos}</option>
               <option value="panic button">{t.panicButton}</option>
             </select>
-
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -632,7 +768,6 @@ const EmergencyDispatch = ({ profile }) => {
               <option value="medium">{t.medium}</option>
               <option value="low">{t.low}</option>
             </select>
-
             <button
               onClick={loadAlerts}
               className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors"
@@ -642,8 +777,6 @@ const EmergencyDispatch = ({ profile }) => {
             </button>
           </div>
         </div>
-
-        {/* Alerts List */}
         <div className="space-y-4">
           {filteredAlerts.map((alert) => (
             <div key={alert.id} className={`bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 border-l-4 ${
@@ -657,9 +790,7 @@ const EmergencyDispatch = ({ profile }) => {
                     <div className="flex items-center space-x-3 mb-3">
                       <span className="text-2xl">{getAlertIcon(alert.alert_type)}</span>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-1">
-                          {alert.tourist_name}
-                        </h3>
+                        <h3 className="text-lg font-semibold text-white mb-1">{alert.tourist_name}</h3>
                         <div className="flex items-center space-x-3 text-sm text-white/80">
                           <span className="font-medium">{alert.tourist_id}</span>
                           <span>•</span>
@@ -668,7 +799,6 @@ const EmergencyDispatch = ({ profile }) => {
                           <span className="font-mono">{alert.tourist_phone}</span>
                         </div>
                       </div>
-                      
                       <div className="flex items-center space-x-2">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(alert.priority_level)}`}>
                           {alert.priority_level}
@@ -678,8 +808,6 @@ const EmergencyDispatch = ({ profile }) => {
                         </span>
                       </div>
                     </div>
-
-                    {/* Officer Information */}
                     {alert.current_handling_officer_name && (
                       <div className="mb-4">
                         <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 backdrop-blur-sm">
@@ -699,7 +827,6 @@ const EmergencyDispatch = ({ profile }) => {
                         </div>
                       </div>
                     )}
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
                         <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
@@ -708,7 +835,6 @@ const EmergencyDispatch = ({ profile }) => {
                         </p>
                         <p className="text-white text-sm">{alert.location_address}</p>
                       </div>
-                      
                       <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
                         <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
                           <Clock className="w-4 h-4 mr-2 text-white/60" />
@@ -717,14 +843,12 @@ const EmergencyDispatch = ({ profile }) => {
                         <p className="text-white text-sm">{formatTime(alert.created_at)}</p>
                       </div>
                     </div>
-
                     <div className="mb-4">
                       <p className="text-sm font-medium text-white/80 mb-2">Alert Message:</p>
                       <div className="bg-yellow-500/20 border border-yellow-400/30 p-3 rounded-lg backdrop-blur-sm">
                         <p className="text-white text-sm">{alert.alert_message}</p>
                       </div>
                     </div>
-
                     {alert.assigned_unit_name && (
                       <div className="mb-4">
                         <div className="bg-green-500/20 border border-green-400/30 p-3 rounded-lg backdrop-blur-sm">
@@ -737,8 +861,6 @@ const EmergencyDispatch = ({ profile }) => {
                     )}
                   </div>
                 </div>
-
-                {/* Action Buttons */}
                 <div className="border-t border-white/20 pt-4">
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                     {alert.status === 'New' && (
@@ -760,7 +882,6 @@ const EmergencyDispatch = ({ profile }) => {
                         )}
                       </button>
                     )}
-
                     <button
                       onClick={() => {
                         setSelectedAlert(alert);
@@ -772,7 +893,6 @@ const EmergencyDispatch = ({ profile }) => {
                       <UserCheck className="w-4 h-4 mr-2" />
                       {t.assignUnit}
                     </button>
-
                     <button
                       onClick={() => {
                         setSelectedAlert(alert);
@@ -792,7 +912,6 @@ const EmergencyDispatch = ({ profile }) => {
                         </>
                       )}
                     </button>
-
                     <button
                       onClick={() => {
                         setSelectedAlert(alert);
@@ -804,7 +923,6 @@ const EmergencyDispatch = ({ profile }) => {
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Message
                     </button>
-
                     <button
                       onClick={() => callTourist(alert.tourist_phone)}
                       disabled={isActionLoading(alert.id, 'call')}
@@ -822,7 +940,6 @@ const EmergencyDispatch = ({ profile }) => {
                         </>
                       )}
                     </button>
-
                     <button
                       onClick={() => {
                         setSelectedAlert(alert);
@@ -835,8 +952,6 @@ const EmergencyDispatch = ({ profile }) => {
                       Contacts
                     </button>
                   </div>
-
-                  {/* Response Actions Log */}
                   {alert.response_actions && alert.response_actions.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-white/20">
                       <p className="text-sm font-medium text-white/80 mb-2">Recent Actions:</p>
@@ -866,7 +981,6 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           ))}
         </div>
-
         {filteredAlerts.length === 0 && (
           <div className="text-center py-12">
             <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-8">
@@ -876,8 +990,6 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           </div>
         )}
-
-        {/* Priority Change Modal */}
         {showPriorityModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
@@ -939,8 +1051,6 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           </div>
         )}
-
-        {/* Assign Unit Modal */}
         {showAssignModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
@@ -991,8 +1101,6 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           </div>
         )}
-
-        {/* Quick Message Modal */}
         {showMessageModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-lg shadow-2xl border border-white/20">
@@ -1003,7 +1111,6 @@ const EmergencyDispatch = ({ profile }) => {
                   <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
                   <p className="text-sm text-green-300 font-mono">{selectedAlert?.tourist_phone}</p>
                 </div>
-                
                 <p className="text-sm font-medium text-white/80 mb-3">Quick Messages:</p>
                 <div className="space-y-2">
                   {Object.entries(t.quickMessages || {}).map(([key, message]) => (
@@ -1017,7 +1124,6 @@ const EmergencyDispatch = ({ profile }) => {
                     </button>
                   ))}
                 </div>
-                
                 {isActionLoading(selectedAlert?.id, 'message') && (
                   <div className="mt-4 flex items-center justify-center py-3">
                     <Loader className="w-5 h-5 animate-spin text-blue-600 mr-2" />
@@ -1035,8 +1141,6 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           </div>
         )}
-
-        {/* Contact Family Modal */}
         {showContactModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
@@ -1047,7 +1151,6 @@ const EmergencyDispatch = ({ profile }) => {
                   <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
                   <p className="text-sm text-red-300">{selectedAlert?.tourist_id}</p>
                 </div>
-                
                 {selectedAlert?.emergency_contacts ? (
                   <div className="space-y-3">
                     <p className="text-sm font-medium text-white/80">Emergency Contacts:</p>
@@ -1058,7 +1161,6 @@ const EmergencyDispatch = ({ profile }) => {
                         <p className="text-sm text-blue-300 font-mono">{contact.phone}</p>
                       </div>
                     ))}
-                    
                     {isActionLoading(selectedAlert?.id, 'contact') && (
                       <div className="flex items-center justify-center py-3">
                         <Loader className="w-5 h-5 animate-spin text-red-600 mr-2" />

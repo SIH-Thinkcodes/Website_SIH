@@ -584,7 +584,7 @@ const handleSubmit = async () => {
               <select
                 value={formData.official_id_type}
                 onChange={(e) => handleInputChange('official_id_type', e.target.value)}
-                className="w-full px-4 py-3 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
                 required
               >
                 <option value="">Select ID type</option>
@@ -604,7 +604,7 @@ const handleSubmit = async () => {
                 type="text"
                 value={formData.official_id_number}
                 onChange={(e) => handleInputChange('official_id_number', e.target.value)}
-                className="w-full px-4 py-3 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                 placeholder="Enter ID number"
                 required
               />

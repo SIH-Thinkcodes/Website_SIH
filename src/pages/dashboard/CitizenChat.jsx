@@ -357,7 +357,7 @@ const PoliceInterface = () => {
               placeholder="Search citizens..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
             />
           </div>
         </div>
@@ -393,7 +393,7 @@ const PoliceInterface = () => {
                   key={citizen.id}
                   onClick={() => startChat(citizen)}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${activeChat?.id === citizen.id
-                      ? 'bg-blue-50 border-l-4 border-blue-500'
+                      ? 'bg-blue-500/20 border-l-4 border-blue-400'
                       : 'hover:bg-white/10'
                     }`}
                 >
@@ -435,17 +435,6 @@ const PoliceInterface = () => {
                     </div>
 
                     <div className="flex flex-col items-end space-y-1">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${citizen.onboarded
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-white/20 text-white/80'
-                        }`}>
-                        {citizen.onboarded ? 'Active' : 'Pending'}
-                      </span>
-                      {citizen.nationality && (
-                        <span className="text-xs text-white/70 bg-white/20 px-2 py-0.5 rounded">
-                          {citizen.nationality}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -521,7 +510,7 @@ const PoliceInterface = () => {
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isPoliceMessage(message)
                           ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-white'
+                          : 'bg-white/20 text-white backdrop-blur-sm border border-white/30'
                         }`}
                     >
                       <p className="text-sm">{message.message}</p>
@@ -546,7 +535,7 @@ const PoliceInterface = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
                   onKeyPress={handleKeyPress}
                   disabled={sendingMessage}
                 />

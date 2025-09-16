@@ -609,12 +609,6 @@ const EmergencyDispatch = ({ profile }) => {
     <div className="min-h-screen relative">
       {/* Test Button for Popup */}
       <div className="p-4">
-        <button
-          onClick={testPopup}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
-        >
-          Test Popup
-        </button>
       </div>
 
       {/* Emergency Alert Popup */}

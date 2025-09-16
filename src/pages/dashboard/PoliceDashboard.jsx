@@ -27,6 +27,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
   const [statsLoading, setStatsLoading] = useState(true)
   const [statsError, setStatsError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [now, setNow] = useState(new Date())
 
   // Function to fetch dashboard statistics
   const fetchDashboardStats = useCallback(async () => {
@@ -69,6 +70,12 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
 
     return () => clearInterval(interval)
   }, [profile?.id, isVerified, fetchDashboardStats])
+
+  // Live ticking clock (updates every second)
+  useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(tick)
+  }, [])
 
   // Realtime: listen for emergency alerts and block UI until acknowledged
   useEffect(() => {
@@ -583,7 +590,7 @@ const renderPage = () => {
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 lg:p-4 sm:col-span-2 lg:col-span-1 border border-white/20">
             <p className="text-xs text-white/60">{t.today}</p>
-            <p className="font-medium text-white text-sm lg:text-base">{new Date().toLocaleDateString()} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+            <p className="font-medium text-white text-sm lg:text-base">{now.toLocaleDateString()} · {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
           </div>
         </div>
       </div>
@@ -770,9 +777,9 @@ const renderPage = () => {
               <h2 className="text-lg font-semibold text-white">{t.welcomeToPolicePortal}</h2>
             </div>
             <div className="hidden sm:flex items-center space-x-4 text-sm text-white/80">
-              <span>{new Date().toLocaleDateString()}</span>
+              <span>{now.toLocaleDateString()}</span>
               <span>•</span>
-              <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+              <span>{now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
               {/* Language Selector */}
               <div className="relative">
                 <select

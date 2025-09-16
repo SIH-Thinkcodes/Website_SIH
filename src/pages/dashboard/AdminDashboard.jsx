@@ -10,8 +10,8 @@ const ConfirmationModal = ({ isOpen, message, onConfirm, onCancel, confirmText, 
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
-        <p className="text-slate-800 mb-6">{message}</p>
+      <div className="bg-white/10 backdrop-blur-md rounded-xl max-w-md w-full p-6 border border-white/20">
+        <p className="text-white mb-6">{message}</p>
         <div className="flex space-x-4">
           <button
             onClick={onConfirm}
@@ -22,7 +22,7 @@ const ConfirmationModal = ({ isOpen, message, onConfirm, onCancel, confirmText, 
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 bg-gray-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+            className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg font-semibold hover:bg-white/30 transition-colors border border-white/30"
             aria-label={cancelText}
           >
             {cancelText}
@@ -47,28 +47,28 @@ const OfficerCard = ({ officer, currentView, actionLoading, onReview, onApprove,
   };
 
   return (
-    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
       <div className="flex justify-between items-start">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
           <div>
-            <p className="font-semibold text-slate-800">{officer.name}</p>
-            <p className="text-sm text-slate-600">{officer.email}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="font-semibold text-white">{officer.name}</p>
+            <p className="text-sm text-white/80">{officer.email}</p>
+            <p className="text-xs text-white/60 mt-1">
               Applied: {new Date(officer.created_at).toLocaleDateString()}
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Badge & Unit</p>
-            <p className="font-medium text-slate-800">{officer.badge_number}</p>
-            <p className="text-sm text-slate-600">{getUnitDisplayName(officer.unit)}</p>
+            <p className="text-sm text-white/80">Badge & Unit</p>
+            <p className="font-medium text-white">{officer.badge_number}</p>
+            <p className="text-sm text-white/80">{getUnitDisplayName(officer.unit)}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Station</p>
-            <p className="font-medium text-slate-800">{officer.station}</p>
+            <p className="text-sm text-white/80">Station</p>
+            <p className="font-medium text-white">{officer.station}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Mobile</p>
-            <p className="font-medium text-slate-800">{officer.mobile_number || 'N/A'}</p>
+            <p className="text-sm text-white/80">Mobile</p>
+            <p className="font-medium text-white">{officer.mobile_number || 'N/A'}</p>
           </div>
         </div>
         <div className="flex flex-col space-y-2 ml-4">
@@ -124,31 +124,31 @@ const TravellerCard = ({ traveller, currentView, actionLoading, onReview, onVeri
   const fullName = `${traveller.first_name || ''} ${traveller.middle_name || ''} ${traveller.last_name || ''}`.trim();
 
   return (
-    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
       <div className="flex justify-between items-start">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
           <div>
-            <p className="font-semibold text-slate-800">{fullName}</p>
-            <p className="text-sm text-slate-600">{traveller.email}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="font-semibold text-white">{fullName}</p>
+            <p className="text-sm text-white/80">{traveller.email}</p>
+            <p className="text-xs text-white/60 mt-1">
               Applied: {new Date(traveller.created_at).toLocaleDateString()}
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Nationality</p>
-            <p className="font-medium text-slate-800">{traveller.nationality || 'N/A'}</p>
-            <p className="text-sm text-slate-600">Phone: {traveller.phone || 'N/A'}</p>
+            <p className="text-sm text-white/80">Nationality</p>
+            <p className="font-medium text-white">{traveller.nationality || 'N/A'}</p>
+            <p className="text-sm text-white/80">Phone: {traveller.phone || 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Document</p>
-            <p className="font-medium text-slate-800">{getDocumentTypeDisplayName(traveller.document_type)}</p>
-            <p className="text-sm text-slate-600">{traveller.document_number || 'N/A'}</p>
+            <p className="text-sm text-white/80">Document</p>
+            <p className="font-medium text-white">{getDocumentTypeDisplayName(traveller.document_type)}</p>
+            <p className="text-sm text-white/80">{traveller.document_number || 'N/A'}</p>
           </div>
           <div>
-            <p className="text-sm text-slate-600">Destination</p>
-            <p className="font-medium text-slate-800">{traveller.destination || 'N/A'}</p>
+            <p className="text-sm text-white/80">Destination</p>
+            <p className="font-medium text-white">{traveller.destination || 'N/A'}</p>
             {traveller.travel_start_date && (
-              <p className="text-sm text-slate-600">From: {traveller.travel_start_date}</p>
+              <p className="text-sm text-white/80">From: {traveller.travel_start_date}</p>
             )}
           </div>
         </div>
@@ -461,8 +461,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="text-red-500 w-12 h-12 mx-auto mb-4" />
-          <p className="text-slate-800 font-semibold">Profile data is missing</p>
-          <p className="text-slate-600">Please log in to access the dashboard</p>
+          <p className="text-white font-semibold">Profile data is missing</p>
+          <p className="text-white/80">Please log in to access the dashboard</p>
         </div>
       </div>
     );
@@ -547,13 +547,13 @@ const AdminDashboard = ({ profile, onLogout }) => {
               <button
                 onClick={refreshDashboard}
                 disabled={statsLoading}
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-white/80 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-colors disabled:opacity-50"
               >
                 <Clock className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
               {lastUpdated && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-white/60">
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </span>
               )}
@@ -568,14 +568,14 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <aside className="md:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-3 md:p-4 sticky top-24">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20 p-3 md:p-4 sticky top-24">
               <div className="space-y-2">
                 <button
                   onClick={() => setCurrentView('pending-officers')}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     currentView === 'pending-officers'
                       ? 'bg-orange-100 text-orange-700'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      : 'text-white/80 hover:text-white hover:bg-white/20'
                   }`}
                   aria-current={currentView === 'pending-officers' ? 'page' : undefined}
                 >
@@ -587,7 +587,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     currentView === 'active-officers'
                       ? 'bg-green-100 text-green-700'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      : 'text-white/80 hover:text-white hover:bg-white/20'
                   }`}
                   aria-current={currentView === 'active-officers' ? 'page' : undefined}
                 >
@@ -599,7 +599,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     currentView === 'pending-travellers'
                       ? 'bg-purple-100 text-purple-700'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      : 'text-white/80 hover:text-white hover:bg-white/20'
                   }`}
                   aria-current={currentView === 'pending-travellers' ? 'page' : undefined}
                 >
@@ -611,7 +611,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     currentView === 'verified-travellers'
                       ? 'bg-teal-100 text-teal-700'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      : 'text-white/80 hover:text-white hover:bg-white/20'
                   }`}
                   aria-current={currentView === 'verified-travellers' ? 'page' : undefined}
                 >
@@ -622,11 +622,11 @@ const AdminDashboard = ({ profile, onLogout }) => {
             </div>
             
             {/* Admin Details Box */}
-            <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-4 mt-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20 p-4 mt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-slate-800 text-sm">{profile.name}</p>
-                  <p className="text-xs text-slate-600 capitalize">{profile.role}</p>
+                  <p className="font-semibold text-white text-sm">{profile.name}</p>
+                  <p className="text-xs text-white/80 capitalize">{profile.role}</p>
                 </div>
                 <button
                   onClick={onLogout}
@@ -654,28 +654,28 @@ const AdminDashboard = ({ profile, onLogout }) => {
           </div>
         )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm p-6 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-600">Pending Officers</p>
+                    <p className="text-sm text-white/80">Pending Officers</p>
                     <p className="text-2xl font-bold text-orange-600">{pendingOfficers?.length || 0}</p>
                   </div>
                   <Clock className="text-orange-500 w-8 h-8" />
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm p-6 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-600">Active Officers</p>
+                    <p className="text-sm text-white/80">Active Officers</p>
                     <p className="text-2xl font-bold text-green-600">{activeOfficers?.length || 0}</p>
                   </div>
                   <CheckCircle className="text-green-500 w-8 h-8" />
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm p-6 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-600">Verified Travellers</p>
+                    <p className="text-sm text-white/80">Verified Travellers</p>
                     <p className="text-2xl font-bold text-teal-600">{verifiedTravellers?.length || 0}</p>
                   </div>
                   <Plane className="text-teal-500 w-8 h-8" />
@@ -684,15 +684,15 @@ const AdminDashboard = ({ profile, onLogout }) => {
             </div>
 
         {/* Dynamic Content Based on Current View */}
-        <div className="bg-white rounded-xl shadow-sm border border-blue-100">
-          <div className="p-6 border-b border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20">
+          <div className="p-6 border-b border-white/20">
+            <h2 className="text-lg font-bold text-white">
               {currentView === 'pending-officers' && 'Pending Officer Approvals'}
               {currentView === 'active-officers' && 'Active Police Officers'}
               {currentView === 'pending-travellers' && 'Pending Traveller Verifications'}
               {currentView === 'verified-travellers' && 'Verified Travellers'}
             </h2>
-            <p className="text-slate-600 mt-1">
+            <p className="text-white/80 mt-1">
               {currentView === 'pending-officers' && 'Review and approve new police officer registrations'}
               {currentView === 'active-officers' && 'Manage and monitor active police officers in the system'}
               {currentView === 'pending-travellers' && 'Review and verify traveller profiles to generate Digital IDs'}
@@ -705,7 +705,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               loadingOfficers ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading officers...</p>
+                  <p className="text-white/80">Loading officers...</p>
                 </div>
               ) : pendingOfficers && pendingOfficers.length > 0 ? (
                 <div className="space-y-4">
@@ -723,8 +723,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Clock className="text-slate-400 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-slate-600">No pending officer approvals</p>
+                  <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                  <p className="text-white/80">No pending officer approvals</p>
                 </div>
               )
             )}
@@ -733,7 +733,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               loadingOfficers ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading officers...</p>
+                  <p className="text-white/80">Loading officers...</p>
                 </div>
               ) : activeOfficers && activeOfficers.length > 0 ? (
                 <div className="space-y-4">
@@ -749,8 +749,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Users className="text-slate-400 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-slate-600">No active officers found</p>
+                  <Users className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                  <p className="text-white/80">No active officers found</p>
                 </div>
               )
             )}
@@ -759,7 +759,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               loadingTravellers ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading travellers...</p>
+                  <p className="text-white/80">Loading travellers...</p>
                 </div>
               ) : pendingTravellers && pendingTravellers.length > 0 ? (
                 <div className="space-y-4">
@@ -777,8 +777,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Clock className="text-slate-400 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-slate-600">No pending traveller verifications</p>
+                  <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                  <p className="text-white/80">No pending traveller verifications</p>
                 </div>
               )
             )}
@@ -787,7 +787,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               loadingTravellers ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading travellers...</p>
+                  <p className="text-white/80">Loading travellers...</p>
                 </div>
               ) : verifiedTravellers && verifiedTravellers.length > 0 ? (
                 <div className="space-y-4">
@@ -803,8 +803,8 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Plane className="text-slate-400 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-slate-600">No verified travellers found</p>
+                  <Plane className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                  <p className="text-white/80">No verified travellers found</p>
                 </div>
               )
             )}
@@ -817,12 +817,12 @@ const AdminDashboard = ({ profile, onLogout }) => {
       {/* Officer Details Modal */}
       {showOfficerModal && selectedOfficer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Officer Details</h3>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+            <div className="p-6 border-b border-white/20 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-white">Officer Details</h3>
               <button
                 onClick={closeOfficerModal}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-white/60 hover:text-white/80"
                 aria-label="Close officer details"
               >
                 <X className="w-5 h-5" />
@@ -831,29 +831,29 @@ const AdminDashboard = ({ profile, onLogout }) => {
             
             <div className="p-6 space-y-6">
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <User className="w-4 h-4 mr-2" />
                   Personal Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
                   <div>
-                    <label className="text-sm text-slate-600">Full Name</label>
-                    <p className="font-medium text-slate-800">{selectedOfficer.name}</p>
+                    <label className="text-sm text-white/80">Full Name</label>
+                    <p className="font-medium text-white">{selectedOfficer.name}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Email</label>
-                    <p className="font-medium text-slate-800">{selectedOfficer.email}</p>
+                    <label className="text-sm text-white/80">Email</label>
+                    <p className="font-medium text-white">{selectedOfficer.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Mobile Number</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Mobile Number</label>
+                    <p className="font-medium text-white flex items-center">
                       <Phone className="w-3 h-3 mr-1" />
                       {selectedOfficer.mobile_number || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Registration Date</label>
-                    <p className="font-medium text-slate-800">
+                    <label className="text-sm text-white/80">Registration Date</label>
+                    <p className="font-medium text-white">
                       {new Date(selectedOfficer.created_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -861,28 +861,28 @@ const AdminDashboard = ({ profile, onLogout }) => {
               </div>
 
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <BadgeIcon className="w-4 h-4 mr-2" />
                   Professional Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
                   <div>
-                    <label className="text-sm text-slate-600">Badge Number</label>
-                    <p className="font-medium text-slate-800">{selectedOfficer.badge_number || 'N/A'}</p>
+                    <label className="text-sm text-white/80">Badge Number</label>
+                    <p className="font-medium text-white">{selectedOfficer.badge_number || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Station</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Station</label>
+                    <p className="font-medium text-white flex items-center">
                       <Building className="w-3 h-3 mr-1" />
                       {selectedOfficer.station || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Unit</label>
-                    <p className="font-medium text-slate-800">{getUnitDisplayName(selectedOfficer.unit)}</p>
+                    <label className="text-sm text-white/80">Unit</label>
+                    <p className="font-medium text-white">{getUnitDisplayName(selectedOfficer.unit)}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Status</label>
+                    <label className="text-sm text-white/80">Status</label>
                     <div className="flex items-center space-x-2">
                       <div className={`w-2 h-2 rounded-full ${selectedOfficer.is_verified ? 'bg-green-500' : 'bg-orange-500'}`}></div>
                       <span className={`text-sm font-medium ${selectedOfficer.is_verified ? 'text-green-700' : 'text-orange-700'}`}>
@@ -894,25 +894,25 @@ const AdminDashboard = ({ profile, onLogout }) => {
               </div>
 
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <FileText className="w-4 h-4 mr-2" />
                   ID Verification
                 </h4>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="text-sm text-slate-600">ID Type</label>
-                      <p className="font-medium text-slate-800">{getIdTypeDisplayName(selectedOfficer.official_id_type)}</p>
+                      <label className="text-sm text-white/80">ID Type</label>
+                      <p className="font-medium text-white">{getIdTypeDisplayName(selectedOfficer.official_id_type)}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-slate-600">ID Number</label>
-                      <p className="font-medium text-slate-800">{selectedOfficer.official_id_number || 'N/A'}</p>
+                      <label className="text-sm text-white/80">ID Number</label>
+                      <p className="font-medium text-white">{selectedOfficer.official_id_number || 'N/A'}</p>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 mb-2 block">Uploaded Document</label>
+                    <label className="text-sm text-white/80 mb-2 block">Uploaded Document</label>
                     {selectedOfficer.official_id_image_url && !imageError.officer ? (
-                      <div className="border border-slate-300 rounded-lg p-2 bg-white">
+                      <div className="border border-white/30 rounded-lg p-2 bg-white/10 backdrop-blur-sm">
                         <img
                           src={selectedOfficer.official_id_image_url}
                           alt="Official ID Document"
@@ -921,7 +921,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                         />
                       </div>
                     ) : (
-                      <div className="border border-slate-300 rounded-lg p-8 text-center text-slate-500">
+                      <div className="border border-slate-300 rounded-lg p-8 text-center text-white/60">
                         <FileText className="w-8 h-8 mx-auto mb-2" />
                         <p>{imageError.officer ? 'Unable to load image' : 'No document uploaded'}</p>
                       </div>
@@ -931,7 +931,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               </div>
 
               {!selectedOfficer.is_verified && currentView === 'pending-officers' && (
-                <div className="flex space-x-4 pt-4 border-t border-slate-200">
+                <div className="flex space-x-4 pt-4 border-t border-white/20">
                   <button
                     onClick={() => handleApproveOfficer(selectedOfficer.id)}
                     disabled={actionLoading === selectedOfficer.id}
@@ -960,12 +960,12 @@ const AdminDashboard = ({ profile, onLogout }) => {
       {/* Traveller Details Modal */}
       {showTravellerModal && selectedTraveller && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Traveller Details</h3>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+            <div className="p-6 border-b border-white/20 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-white">Traveller Details</h3>
               <button
                 onClick={closeTravellerModal}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-white/60 hover:text-white/80"
                 aria-label="Close traveller details"
               >
                 <X className="w-5 h-5" />
@@ -974,40 +974,40 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
             <div className="p-6 space-y-6">
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <User className="w-4 h-4 mr-2" />
                   Personal Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
                   <div>
-                    <label className="text-sm text-slate-600">Full Name</label>
-                    <p className="font-medium text-slate-800">
+                    <label className="text-sm text-white/80">Full Name</label>
+                    <p className="font-medium text-white">
                       {`${selectedTraveller.first_name || ''} ${selectedTraveller.middle_name || ''} ${selectedTraveller.last_name || ''}`.trim()}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Email</label>
-                    <p className="font-medium text-slate-800">{selectedTraveller.email}</p>
+                    <label className="text-sm text-white/80">Email</label>
+                    <p className="font-medium text-white">{selectedTraveller.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Phone Number</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Phone Number</label>
+                    <p className="font-medium text-white flex items-center">
                       <Phone className="w-3 h-3 mr-1" />
                       {selectedTraveller.phone || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Nationality</label>
-                    <p className="font-medium text-slate-800">{selectedTraveller.nationality || 'N/A'}</p>
+                    <label className="text-sm text-white/80">Nationality</label>
+                    <p className="font-medium text-white">{selectedTraveller.nationality || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Registration Date</label>
-                    <p className="font-medium text-slate-800">
+                    <label className="text-sm text-white/80">Registration Date</label>
+                    <p className="font-medium text-white">
                       {new Date(selectedTraveller.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Status</label>
+                    <label className="text-sm text-white/80">Status</label>
                     <div className="flex items-center space-x-2">
                       <div className={`w-2 h-2 rounded-full ${selectedTraveller.is_verified ? 'bg-teal-500' : 'bg-purple-500'}`}></div>
                       <span className={`text-sm font-medium ${selectedTraveller.is_verified ? 'text-teal-700' : 'text-purple-700'}`}>
@@ -1019,60 +1019,60 @@ const AdminDashboard = ({ profile, onLogout }) => {
               </div>
 
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <Plane className="w-4 h-4 mr-2" />
                   Travel Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
                   <div>
-                    <label className="text-sm text-slate-600">Destination</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Destination</label>
+                    <p className="font-medium text-white flex items-center">
                       <MapPin className="w-3 h-3 mr-1" />
                       {selectedTraveller.destination || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Travel Start Date</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Travel Start Date</label>
+                    <p className="font-medium text-white flex items-center">
                       <Calendar className="w-3 h-3 mr-1" />
                       {selectedTraveller.travel_start_date || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Travel End Date</label>
-                    <p className="font-medium text-slate-800 flex items-center">
+                    <label className="text-sm text-white/80">Travel End Date</label>
+                    <p className="font-medium text-white flex items-center">
                       <Calendar className="w-3 h-3 mr-1" />
                       {selectedTraveller.travel_end_date || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600">Emergency Contact</label>
-                    <p className="font-medium text-slate-800">{selectedTraveller.emergency_contact_name || 'N/A'}</p>
-                    <p className="text-sm text-slate-600">{selectedTraveller.emergency_contact_number || ''}</p>
+                    <label className="text-sm text-white/80">Emergency Contact</label>
+                    <p className="font-medium text-white">{selectedTraveller.emergency_contact_name || 'N/A'}</p>
+                    <p className="text-sm text-white/80">{selectedTraveller.emergency_contact_number || ''}</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                <h4 className="font-semibold text-white mb-3 flex items-center">
                   <FileText className="w-4 h-4 mr-2" />
                   Document Information
                 </h4>
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="text-sm text-slate-600">Document Type</label>
-                      <p className="font-medium text-slate-800">{getDocumentTypeDisplayName(selectedTraveller.document_type)}</p>
+                      <label className="text-sm text-white/80">Document Type</label>
+                      <p className="font-medium text-white">{getDocumentTypeDisplayName(selectedTraveller.document_type)}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-slate-600">Document Number</label>
-                      <p className="font-medium text-slate-800">{selectedTraveller.document_number || 'N/A'}</p>
+                      <label className="text-sm text-white/80">Document Number</label>
+                      <p className="font-medium text-white">{selectedTraveller.document_number || 'N/A'}</p>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-slate-600 mb-2 block">Uploaded Document</label>
+                    <label className="text-sm text-white/80 mb-2 block">Uploaded Document</label>
                     {selectedTraveller.document_url && !imageError.traveller ? (
-                      <div className="border border-slate-300 rounded-lg p-2 bg-white">
+                      <div className="border border-white/30 rounded-lg p-2 bg-white/10 backdrop-blur-sm">
                         <img
                           src={selectedTraveller.document_url}
                           alt="Travel Document"
@@ -1081,7 +1081,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                         />
                       </div>
                     ) : (
-                      <div className="border border-slate-300 rounded-lg p-8 text-center text-slate-500">
+                      <div className="border border-slate-300 rounded-lg p-8 text-center text-white/60">
                         <FileText className="w-8 h-8 mx-auto mb-2" />
                         <p>{imageError.traveller ? 'Unable to load image' : 'No document uploaded'}</p>
                       </div>
@@ -1092,7 +1092,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
               {selectedTraveller.is_verified && selectedTraveller.digital_id && (
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-3 flex items-center">
+                  <h4 className="font-semibold text-white mb-3 flex items-center">
                     <Shield className="w-4 h-4 mr-2" />
                     Blockchain Information
                   </h4>
@@ -1123,7 +1123,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
               )}
 
               {!selectedTraveller.is_verified && currentView === 'pending-travellers' && (
-                <div className="flex space-x-4 pt-4 border-t border-slate-200">
+                <div className="flex space-x-4 pt-4 border-t border-white/20">
                   <button
                     onClick={() => handleVerifyTraveller(selectedTraveller.id)}
                     disabled={actionLoading === selectedTraveller.id}

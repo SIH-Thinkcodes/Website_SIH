@@ -1,9 +1,8 @@
+
 import { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { Shield, Users, CheckCircle, Clock, LogOut, UserCheck, UserX, Eye, X, FileText, Phone, MapPin, Badge as BadgeIcon, Building, AlertCircle, Plane, Calendar, User } from 'lucide-react'
 import { authAPI, travellerAPI } from '../../utils/supabase'
-
- 
 
 // Confirmation Modal Component
 const ConfirmationModal = ({ isOpen, message, onConfirm, onCancel, confirmText, cancelText }) => {
@@ -195,12 +194,9 @@ const AdminDashboard = ({ profile, onLogout }) => {
   const [selectedTraveller, setSelectedTraveller] = useState(null);
   const [showOfficerModal, setShowOfficerModal] = useState(false);
   const [showTravellerModal, setShowTravellerModal] = useState(false);
-  
-  // Dashboard statistics state
-  // Stats removed from UI; keep minimal placeholders disabled
-  // Removed stats state (not used)
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [pendingTravellers, setPendingTravellers] = useState([]);
   const [verifiedTravellers, setVerifiedTravellers] = useState([]);
   const [pendingOfficers, setPendingOfficers] = useState([]);
@@ -215,10 +211,9 @@ const AdminDashboard = ({ profile, onLogout }) => {
     cancelText: 'Cancel',
   });
   const [imageError, setImageError] = useState({ officer: false, traveller: false });
-
-  // Derived totals (kept for potential future use)
-  // const totalOfficers = (pendingOfficers?.length || 0) + (activeOfficers?.length || 0)
-  // const totalTravellers = (pendingTravellers?.length || 0) + (verifiedTravellers?.length || 0)
+  const [showProgress, setShowProgress] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
 
   useEffect(() => {
     loadData();
@@ -231,18 +226,19 @@ const AdminDashboard = ({ profile, onLogout }) => {
     }
   }, [error]);
 
-  // Stats section removed; keep no-op to preserve structure
+  useEffect(() => {
+    if (success) {
+      const timeout = setTimeout(() => setSuccess(''), 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [success]);
+
   const fetchDashboardStats = async () => {}
 
-  // Function to refresh dashboard data (no-op)
-  // Removed refresh handler (not used)
-
-  // Fetch dashboard stats on component mount
   useEffect(() => {
     fetchDashboardStats()
   }, [])
 
-  // Set up real-time updates every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       fetchDashboardStats()
@@ -265,7 +261,6 @@ const AdminDashboard = ({ profile, onLogout }) => {
       setPendingOfficers(pendingOfficersData);
       setActiveOfficers(activeOfficersData);
     } catch (error) {
-      console.error('Error loading data:', error);
       setError('Failed to load data: ' + error.message);
     } finally {
       setLoadingTravellers(false);
@@ -277,24 +272,53 @@ const AdminDashboard = ({ profile, onLogout }) => {
     setConfirmation({ isOpen: true, message, onConfirm, confirmText, cancelText });
   };
 
+  const startProgress = (message) => {
+    setShowProgress(true);
+    setProgress(0);
+    setProgressMessage(message);
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 10;
+      });
+    }, 500);
+    return interval;
+  };
+
+  const completeProgress = async (interval) => {
+    clearInterval(interval);
+    setProgress(100);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setShowProgress(false);
+  };
+
   const handleApproveOfficer = (officerId) => {
     showConfirmation(
       'Are you sure you want to approve this officer?',
       async () => {
         setActionLoading(officerId);
         setError('');
+        setSuccess('');
+        const progressInterval = startProgress('Approving officer...');
         try {
           await authAPI.verifyOfficer(officerId);
+          await completeProgress(progressInterval);
           await loadData();
-          setConfirmation({ isOpen: false });
+          setSuccess('Officer approved successfully');
           if (showOfficerModal) {
             setShowOfficerModal(false);
             setSelectedOfficer(null);
           }
         } catch (err) {
+          clearInterval(progressInterval);
+          setShowProgress(false);
           setError('Failed to approve officer: ' + err.message);
         } finally {
           setActionLoading(null);
+          setConfirmation({ isOpen: false });
         }
       },
       'Approve',
@@ -308,18 +332,24 @@ const AdminDashboard = ({ profile, onLogout }) => {
       async () => {
         setActionLoading(officerId);
         setError('');
+        setSuccess('');
+        const progressInterval = startProgress('Rejecting officer...');
         try {
           await authAPI.rejectOfficer(officerId);
+          await completeProgress(progressInterval);
           await loadData();
-          setConfirmation({ isOpen: false });
+          setSuccess('Officer rejected successfully');
           if (showOfficerModal) {
             setShowOfficerModal(false);
             setSelectedOfficer(null);
           }
         } catch (err) {
+          clearInterval(progressInterval);
+          setShowProgress(false);
           setError('Failed to reject officer: ' + err.message);
         } finally {
           setActionLoading(null);
+          setConfirmation({ isOpen: false });
         }
       },
       'Reject',
@@ -333,18 +363,24 @@ const AdminDashboard = ({ profile, onLogout }) => {
       async () => {
         setActionLoading(travellerId);
         setError('');
+        setSuccess('');
+        const progressInterval = startProgress('Verifying traveller and generating Digital ID...');
         try {
           await travellerAPI.verifyTraveller(travellerId);
+          await completeProgress(progressInterval);
           await loadData();
-          setConfirmation({ isOpen: false });
+          setSuccess('Traveller verified successfully');
           if (showTravellerModal) {
             setShowTravellerModal(false);
             setSelectedTraveller(null);
           }
-    } catch (err) {
+        } catch (err) {
+          clearInterval(progressInterval);
+          setShowProgress(false);
           setError('Failed to verify traveller: ' + err.message);
-    } finally {
+        } finally {
           setActionLoading(null);
+          setConfirmation({ isOpen: false });
         }
       },
       'Verify',
@@ -358,18 +394,24 @@ const AdminDashboard = ({ profile, onLogout }) => {
       async () => {
         setActionLoading(travellerId);
         setError('');
+        setSuccess('');
+        const progressInterval = startProgress('Rejecting traveller...');
         try {
           await travellerAPI.rejectTraveller(travellerId);
+          await completeProgress(progressInterval);
           await loadData();
-          setConfirmation({ isOpen: false });
+          setSuccess('Traveller rejected successfully');
           if (showTravellerModal) {
             setShowTravellerModal(false);
             setSelectedTraveller(null);
           }
         } catch (err) {
+          clearInterval(progressInterval);
+          setShowProgress(false);
           setError('Failed to reject traveller: ' + err.message);
         } finally {
           setActionLoading(null);
+          setConfirmation({ isOpen: false });
         }
       },
       'Reject',
@@ -446,8 +488,49 @@ const AdminDashboard = ({ profile, onLogout }) => {
 
   return (
     <div className="min-h-screen">
+      {/* Progress Pop-up */}
+      {showProgress && (
+        <div className="fixed top-4 right-4 bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/20 shadow-xl max-w-sm z-50">
+          <p className="text-white mb-2">{progressMessage}</p>
+          <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+            <div className="bg-blue-600 h-full transition-width duration-300" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="text-white/80 text-sm mt-1 text-right">{progress}%</p>
+        </div>
+      )}
+
+      {/* Error Pop-up */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center shadow-xl max-w-sm z-50">
+          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span>{error}</span>
+          <button
+            onClick={() => setError('')}
+            className="ml-auto text-red-500 hover:text-red-700"
+            aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Success Pop-up */}
+      {success && (
+        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg flex items-center shadow-xl max-w-sm z-50">
+          <CheckCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span>{success}</span>
+          <button
+            onClick={() => setSuccess('')}
+            className="ml-auto text-green-500 hover:text-green-700"
+            aria-label="Dismiss success"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-50">
+      <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-5 flex items-center justify-center">
           <div className="flex items-center space-x-3">
             <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center">
@@ -459,14 +542,10 @@ const AdminDashboard = ({ profile, onLogout }) => {
             </div>
           </div>
         </div>
-
-        {/* Left Sidebar Navigation (moved from top tabs) */}
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-10">
-        {/* Dashboard Stats Section removed as requested */}
-
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <aside className="md:col-span-3">
             <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20 p-3 md:p-4 sticky top-24">
@@ -540,20 +619,6 @@ const AdminDashboard = ({ profile, onLogout }) => {
             </div>
           </aside>
           <section className="md:col-span-9">
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-center">
-            <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>{error}</span>
-            <button
-              onClick={() => setError('')}
-              className="ml-auto text-red-500 hover:text-red-700"
-              aria-label="Dismiss error"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm p-6 border border-white/20">
                 <div className="flex items-center justify-between">
@@ -584,133 +649,132 @@ const AdminDashboard = ({ profile, onLogout }) => {
               </div>
             </div>
 
-        {/* Dynamic Content Based on Current View */}
-        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20">
-          <div className="p-6 border-b border-white/20">
-            <h2 className="text-lg font-bold text-white">
-              {currentView === 'pending-officers' && 'Pending Officer Approvals'}
-              {currentView === 'active-officers' && 'Active Police Officers'}
-              {currentView === 'pending-travellers' && 'Pending Traveller Verifications'}
-              {currentView === 'verified-travellers' && 'Verified Travellers'}
-            </h2>
-            <p className="text-white/80 mt-1">
-              {currentView === 'pending-officers' && 'Review and approve new police officer registrations'}
-              {currentView === 'active-officers' && 'Manage and monitor active police officers in the system'}
-              {currentView === 'pending-travellers' && 'Review and verify traveller profiles to generate Digital IDs'}
-              {currentView === 'verified-travellers' && 'Manage and monitor verified travellers with Digital IDs'}
-            </p>
-          </div>
-          
-          <div className="p-6">
-            {currentView === 'pending-officers' && (
-              loadingOfficers ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-white/80">Loading officers...</p>
-                </div>
-              ) : pendingOfficers && pendingOfficers.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingOfficers.map((officer) => (
-                    <OfficerCard
-                      key={officer.id || `pending-officer-${Math.random()}`}
-                      officer={officer}
-                      currentView={currentView}
-                      actionLoading={actionLoading}
-                      onReview={openOfficerModal}
-                      onApprove={handleApproveOfficer}
-                      onReject={handleRejectOfficer}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-white/80">No pending officer approvals</p>
-                </div>
-              )
-            )}
+            {/* Dynamic Content Based on Current View */}
+            <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-sm border border-white/20">
+              <div className="p-6 border-b border-white/20">
+                <h2 className="text-lg font-bold text-white">
+                  {currentView === 'pending-officers' && 'Pending Officer Approvals'}
+                  {currentView === 'active-officers' && 'Active Police Officers'}
+                  {currentView === 'pending-travellers' && 'Pending Traveller Verifications'}
+                  {currentView === 'verified-travellers' && 'Verified Travellers'}
+                </h2>
+                <p className="text-white/80 mt-1">
+                  {currentView === 'pending-officers' && 'Review and approve new police officer registrations'}
+                  {currentView === 'active-officers' && 'Manage and monitor active police officers in the system'}
+                  {currentView === 'pending-travellers' && 'Review and verify traveller profiles to generate Digital IDs'}
+                  {currentView === 'verified-travellers' && 'Manage and monitor verified travellers with Digital IDs'}
+                </p>
+              </div>
+              <div className="p-6">
+                {currentView === 'pending-officers' && (
+                  loadingOfficers ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p className="text-white/80">Loading officers...</p>
+                    </div>
+                  ) : pendingOfficers && pendingOfficers.length > 0 ? (
+                    <div className="space-y-4">
+                      {pendingOfficers.map((officer) => (
+                        <OfficerCard
+                          key={officer.id || `pending-officer-${Math.random()}`}
+                          officer={officer}
+                          currentView={currentView}
+                          actionLoading={actionLoading}
+                          onReview={openOfficerModal}
+                          onApprove={handleApproveOfficer}
+                          onReject={handleRejectOfficer}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                      <p className="text-white/80">No pending officer approvals</p>
+                    </div>
+                  )
+                )}
 
-            {currentView === 'active-officers' && (
-              loadingOfficers ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-white/80">Loading officers...</p>
-                </div>
-              ) : activeOfficers && activeOfficers.length > 0 ? (
-                <div className="space-y-4">
-                  {activeOfficers.map((officer) => (
-                    <OfficerCard
-                      key={officer.id || `active-officer-${Math.random()}`}
-                      officer={{ ...officer, is_verified: true }}
-                      currentView={currentView}
-                      actionLoading={actionLoading}
-                      onReview={openOfficerModal}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="text-white/60 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-white/80">No active officers found</p>
-                </div>
-              )
-            )}
+                {currentView === 'active-officers' && (
+                  loadingOfficers ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p className="text-white/80">Loading officers...</p>
+                    </div>
+                  ) : activeOfficers && activeOfficers.length > 0 ? (
+                    <div className="space-y-4">
+                      {activeOfficers.map((officer) => (
+                        <OfficerCard
+                          key={officer.id || `active-officer-${Math.random()}`}
+                          officer={{ ...officer, is_verified: true }}
+                          currentView={currentView}
+                          actionLoading={actionLoading}
+                          onReview={openOfficerModal}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                      <p className="text-white/80">No active officers found</p>
+                    </div>
+                  )
+                )}
 
-            {currentView === 'pending-travellers' && (
-              loadingTravellers ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-white/80">Loading travellers...</p>
-                </div>
-              ) : pendingTravellers && pendingTravellers.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingTravellers.map((traveller) => (
-                    <TravellerCard
-                      key={traveller.id || `pending-traveller-${Math.random()}`}
-                      traveller={traveller}
-                      currentView={currentView}
-                      actionLoading={actionLoading}
-                      onReview={openTravellerModal}
-                      onVerify={handleVerifyTraveller}
-                      onReject={handleRejectTraveller}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-white/80">No pending traveller verifications</p>
-                </div>
-              )
-            )}
+                {currentView === 'pending-travellers' && (
+                  loadingTravellers ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p className="text-white/80">Loading travellers...</p>
+                    </div>
+                  ) : pendingTravellers && pendingTravellers.length > 0 ? (
+                    <div className="space-y-4">
+                      {pendingTravellers.map((traveller) => (
+                        <TravellerCard
+                          key={traveller.id || `pending-traveller-${Math.random()}`}
+                          traveller={traveller}
+                          currentView={currentView}
+                          actionLoading={actionLoading}
+                          onReview={openTravellerModal}
+                          onVerify={handleVerifyTraveller}
+                          onReject={handleRejectTraveller}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                      <p className="text-white/80">No pending traveller verifications</p>
+                    </div>
+                  )
+                )}
 
-            {currentView === 'verified-travellers' && (
-              loadingTravellers ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-white/80">Loading travellers...</p>
-                </div>
-              ) : verifiedTravellers && verifiedTravellers.length > 0 ? (
-                <div className="space-y-4">
-                  {verifiedTravellers.map((traveller) => (
-                    <TravellerCard
-                      key={traveller.id || `verified-traveller-${Math.random()}`}
-                      traveller={{ ...traveller, is_verified: true }}
-                      currentView={currentView}
-                      actionLoading={actionLoading}
-                      onReview={openTravellerModal}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Plane className="text-white/60 w-12 h-12 mx-auto mb-4" />
-                  <p className="text-white/80">No verified travellers found</p>
-                </div>
-              )
-            )}
-          </div>
-        </div>
+                {currentView === 'verified-travellers' && (
+                  loadingTravellers ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p className="text-white/80">Loading travellers...</p>
+                    </div>
+                  ) : verifiedTravellers && verifiedTravellers.length > 0 ? (
+                    <div className="space-y-4">
+                      {verifiedTravellers.map((traveller) => (
+                        <TravellerCard
+                          key={traveller.id || `verified-traveller-${Math.random()}`}
+                          traveller={{ ...traveller, is_verified: true }}
+                          currentView={currentView}
+                          actionLoading={actionLoading}
+                          onReview={openTravellerModal}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Plane className="text-white/60 w-12 h-12 mx-auto mb-4" />
+                      <p className="text-white/80">No verified travellers found</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
           </section>
         </div>
       </main>
@@ -835,7 +899,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 <div className="flex space-x-4 pt-4 border-t border-white/20">
                   <button
                     onClick={() => handleApproveOfficer(selectedOfficer.id)}
-                    disabled={actionLoading === selectedOfficer.id}
+                    disabled={actionLoading === selectedOfficer.id || showProgress}
                     className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center space-x-2 transition-colors"
                     aria-label="Approve officer"
                   >
@@ -844,7 +908,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   </button>
                   <button
                     onClick={() => handleRejectOfficer(selectedOfficer.id)}
-                    disabled={actionLoading === selectedOfficer.id}
+                    disabled={actionLoading === selectedOfficer.id || showProgress}
                     className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center justify-center space-x-2 transition-colors"
                     aria-label="Reject officer"
                   >
@@ -996,7 +1060,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   <h4 className="font-semibold text-white mb-3 flex items-center">
                     <Shield className="w-4 h-4 mr-2" />
                     Blockchain Information
-                  </h4>
+                </h4>
                   <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -1027,7 +1091,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                 <div className="flex space-x-4 pt-4 border-t border-white/20">
                   <button
                     onClick={() => handleVerifyTraveller(selectedTraveller.id)}
-                    disabled={actionLoading === selectedTraveller.id}
+                    disabled={actionLoading === selectedTraveller.id || showProgress}
                     className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center space-x-2 transition-colors"
                     aria-label="Verify traveller"
                   >
@@ -1036,7 +1100,7 @@ const AdminDashboard = ({ profile, onLogout }) => {
                   </button>
                   <button
                     onClick={() => handleRejectTraveller(selectedTraveller.id)}
-                    disabled={actionLoading === selectedTraveller.id}
+                    disabled={actionLoading === selectedTraveller.id || showProgress}
                     className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 flex items-center justify-center space-x-2 transition-colors"
                     aria-label="Reject traveller"
                   >

@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Shield, Lock, Mail, AlertCircle } from 'lucide-react'
+import { Shield, Lock, Mail, AlertCircle, X } from 'lucide-react'
 
-const Login = ({ onLogin, onNavigate }) => {
+const Login = ({ onLogin, onNavigate, error: contextError }) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(contextError || '')
 
-  // Clear error when user starts typing
+  useEffect(() => {
+    setError(contextError || '')
+  }, [contextError])
+
   useEffect(() => {
     if (error && (email || password)) {
       setError('')
     }
-  }, [email, password])
+  }, [email, password, error])
 
   const validateInputs = () => {
     if (!email.trim()) {
@@ -24,7 +27,6 @@ const Login = ({ onLogin, onNavigate }) => {
       return false
     }
     
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address')
@@ -35,27 +37,16 @@ const Login = ({ onLogin, onNavigate }) => {
   }
 
   const handleSubmit = async () => {
-    // Clear any existing errors
     setError('')
-    
-    // Validate inputs first
-    if (!validateInputs()) {
-      return
-    }
+    if (!validateInputs()) return
 
     setLoading(true)
     
     try {
       await onLogin(email.trim(), password)
-      // Success - the auth context will handle navigation
     } catch (err) {
       console.error('Login failed:', err)
-      
-      // Set user-friendly error message
-      const errorMessage = err.message || 'Login failed. Please try again.'
-      setError(errorMessage)
-      
-      // Clear password field on error for security
+      setError(err.message || 'Login failed. Please try again.')
       setPassword('')
     } finally {
       setLoading(false)
@@ -63,13 +54,24 @@ const Login = ({ onLogin, onNavigate }) => {
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      handleSubmit()
-    }
+    if (e.key === 'Enter' && !loading) handleSubmit()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-600 text-white p-4 rounded-lg flex items-center shadow-xl max-w-sm z-50 animate-fade-in">
+          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+          <span className="flex-1">{error}</span>
+          <button
+            onClick={() => setError('')}
+            className="ml-2 text-white/80 hover:text-white focus:outline-none"
+            aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
         <div className="text-center mb-8">
           <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -117,15 +119,6 @@ const Login = ({ onLogin, onNavigate }) => {
               />
             </div>
           </div>
-
-          {error && (
-            <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm backdrop-blur-sm">
-              <div className="flex items-start">
-                <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            </div>
-          )}
 
           <button
             onClick={handleSubmit}

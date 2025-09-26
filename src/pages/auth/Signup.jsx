@@ -32,7 +32,7 @@ const Signup = ({ onSignup, onNavigate }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
-    console.log('File selected:', file) // Debug logging
+    console.log('File selected:', file?.name, 'Size:', file?.size, 'Type:', file?.type) // Debug logging
     
     if (!file) return
 
@@ -59,7 +59,7 @@ const Signup = ({ onSignup, onNavigate }) => {
     // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
-      console.log('File preview created')
+      console.log('File preview created for:', file.name)
       setImagePreview(e.target.result)
     }
     reader.readAsDataURL(file)
@@ -69,6 +69,7 @@ const Signup = ({ onSignup, onNavigate }) => {
     if (stepNumber === 1) {
       if (!formData.email || !formData.password || !formData.confirmPassword || !formData.name) {
         setError('Please fill all required fields')
+        console.log('Validation error (Step 1): Missing required fields')
         return false
       }
 
@@ -76,18 +77,21 @@ const Signup = ({ onSignup, onNavigate }) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
         setError('Please enter a valid email address')
+        console.log('Validation error (Step 1): Invalid email:', formData.email)
         return false
       }
 
       // Validate password strength
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters long')
+        console.log('Validation error (Step 1): Password too short:', formData.password.length)
         return false
       }
 
       // Check password match
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match')
+        console.log('Validation error (Step 1): Passwords mismatch')
         return false
       }
 
@@ -98,12 +102,14 @@ const Signup = ({ onSignup, onNavigate }) => {
       // Validate mobile number format (basic)
       if (formData.mobile_number && !/^\d{10}$/.test(formData.mobile_number.replace(/\D/g, ''))) {
         setError('Please enter a valid 10-digit mobile number')
+        console.log('Validation error (Step 2): Invalid mobile number:', formData.mobile_number)
         return false
       }
 
       if (formData.role === 'police') {
         if (!formData.badge_number || !formData.station || !formData.unit) {
           setError('Badge number, station, and unit are required for police officers')
+          console.log('Validation error (Step 2): Missing police details')
           return false
         }
       }
@@ -112,10 +118,12 @@ const Signup = ({ onSignup, onNavigate }) => {
         const adminSecret = import.meta.env.VITE_ADMIN_SECRET_KEY
         if (!formData.admin_secret) {
           setError('Admin secret key is required for administrator accounts')
+          console.log('Validation error (Step 2): Missing admin secret')
           return false
         }
         if (formData.admin_secret !== adminSecret) {
           setError('Invalid admin secret key')
+          console.log('Validation error (Step 2): Invalid admin secret')
           return false
         }
       }
@@ -126,11 +134,13 @@ const Signup = ({ onSignup, onNavigate }) => {
     if (stepNumber === 3) {
       if (!formData.official_id_type || !formData.official_id_number) {
         setError('Please select ID type and enter ID number')
+        console.log('Validation error (Step 3): Missing ID details')
         return false
       }
 
       if (!selectedFile) {
         setError('Please upload your official ID document')
+        console.log('Validation error (Step 3): No ID document uploaded')
         return false
       }
 
@@ -144,11 +154,13 @@ const Signup = ({ onSignup, onNavigate }) => {
     if (!validateStep(step)) return
     setError('')
     setStep(step + 1)
+    console.log('Navigating to step:', step + 1)
   }
 
   const handleBack = () => {
     setError('')
     setStep(step - 1)
+    console.log('Navigating back to step:', step - 1)
   }
 
   const uploadImage = async (file, userId) => {
@@ -157,7 +169,7 @@ const Signup = ({ onSignup, onNavigate }) => {
       const fileName = `${userId}_${Date.now()}.${fileExt}`
       const filePath = `official-ids/${fileName}`
 
-      // Upload to Supabase storage
+      console.log('Uploading image:', fileName)
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -165,158 +177,153 @@ const Signup = ({ onSignup, onNavigate }) => {
           upsert: false
         })
 
-      if (error) throw error
+      if (error) {
+        console.error('Upload error:', error)
+        throw error
+      }
 
-      // Get public URL
+      console.log('Image uploaded successfully, getting public URL')
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath)
 
       return publicUrl
     } catch (error) {
-      console.error('Image upload error:', error)
+      console.error('Image upload failed:', error)
       throw new Error('Failed to upload image: ' + error.message)
     }
   }
 
-  // Replace the handleSubmit function in your Signup component with this:
-const handleSubmit = async () => {
-  if (!validateStep(step)) return
+  const handleSubmit = async () => {
+    if (!validateStep(step)) return
 
-  setLoading(true)
-  setError('')
-  setUploadProgress(0)
+    setLoading(true)
+    setError('')
+    setUploadProgress(0)
+    console.log('Starting signup process for email:', formData.email)
 
-  // IMPORTANT: Store the file reference before any async operations
-  const fileToUpload = selectedFile
+    // IMPORTANT: Store the file reference before any async operations
+    const fileToUpload = selectedFile
 
-  try {
-    const userData = {
-      email: formData.email,
-      name: formData.name,
-      role: formData.role,
-      mobile_number: formData.mobile_number || null,
-      badge_number: formData.role === 'police' ? formData.badge_number : null,
-      station: formData.role === 'police' ? formData.station : null,
-      unit: formData.role === 'police' ? formData.unit : null,
-      official_id_type: formData.official_id_type || null,
-      official_id_number: formData.official_id_number || null,
-      is_verified: formData.role === 'admin'
-    }
-
-    console.log('Creating user account...')
-    console.log('File to upload:', fileToUpload?.name || 'none')
-    const authData = await onSignup(formData.email, formData.password, userData)
-    console.log('User ID after signup:', authData?.user?.id)
-
-    if (fileToUpload && authData?.user?.id) {
-      console.log('Starting image upload...')
-      setUploadProgress(20)
-      
-      try {
-        const fileExt = fileToUpload.name.split('.').pop()
-        const fileName = `${authData.user.id}_${Date.now()}.${fileExt}`
-        const filePath = `official-ids/${fileName}`
-
-        console.log('Uploading file:', fileName, 'Size:', fileToUpload.size)
-
-        setUploadProgress(40)
-
-        // Upload file directly to storage (remove bucket check)
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, fileToUpload, {
-            cacheControl: '3600',
-            upsert: false
-          })
-
-        if (uploadError) {
-          console.error('Upload error details:', uploadError)
-          if (uploadError.message.includes('duplicate')) {
-            throw new Error('File already exists. Please try again.')
-          } else if (uploadError.message.includes('policy')) {
-            throw new Error('Permission denied. Contact administrator.')
-          } else {
-            throw new Error(`Upload failed: ${uploadError.message}`)
-          }
-        }
-
-        console.log('Upload successful:', uploadData)
-        setUploadProgress(70)
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('documents')
-          .getPublicUrl(filePath)
-
-        if (!urlData?.publicUrl) {
-          throw new Error('Failed to generate file URL')
-        }
-
-        console.log('Generated public URL:', urlData.publicUrl)
-        setUploadProgress(90)
-
-        // Update profile with image URL
-        const { error: updateError } = await supabase
-          .from('user_profiles')
-          .update({ official_id_image_url: urlData.publicUrl })
-          .eq('id', authData.user.id)
-
-        if (updateError) {
-          console.error('Failed to update profile with image URL:', updateError)
-          // Don't throw here - user is created, just image link failed
-          console.warn('User created but image URL not saved to profile')
-        } else {
-          console.log('Profile updated with image URL successfully')
-        }
-
-        setUploadProgress(100)
-        console.log('Image upload completed successfully')
-
-      } catch (imageError) {
-        console.error('Image upload failed:', imageError)
-        // Show error to user but don't fail the entire signup
-        setError(`Account created successfully, but image upload failed: ${imageError.message}`)
-        // Still consider signup successful
-        setTimeout(() => {
-          console.log('Signup completed with image upload warning')
-          // Don't redirect immediately if there was an upload error
-        }, 3000)
-        return // Exit early to show the error
+    try {
+      const userData = {
+        email: formData.email,
+        name: formData.name,
+        role: formData.role,
+        mobile_number: formData.mobile_number || null,
+        badge_number: formData.role === 'police' ? formData.badge_number : null,
+        station: formData.role === 'police' ? formData.station : null,
+        unit: formData.role === 'police' ? formData.unit : null,
+        official_id_type: formData.official_id_type || null,
+        official_id_number: formData.official_id_number || null,
+        is_verified: formData.role === 'admin'
       }
-    } else {
-      console.log('No file to upload:', {
-        hasFile: !!fileToUpload,
-        fileName: fileToUpload?.name,
-        hasUserId: !!authData?.user?.id,
-        userId: authData?.user?.id
-      })
-      setUploadProgress(100)
-    }
 
-    console.log('Signup completed successfully')
-    
-  } catch (err) {
-    console.error('Signup error:', err)
-    if (err.message.includes('User already registered')) {
-      setError('An account with this email already exists. Please try logging in instead.')
-    } else if (err.message.includes('rate limit')) {
-      setError('Too many signup attempts. Please try again later.')
-    } else if (err.message.includes('Invalid email')) {
-      setError('Please enter a valid email address.')
-    } else if (err.message.includes('Password should be at least 6 characters')) {
-      setError('Password must be at least 6 characters long.')
-    } else {
-      setError(err.message || 'Signup failed. Please try again.')
-    }
-  } finally {
-    setLoading(false)
-    if (uploadProgress === 100 && !error) {
-      // Only reset progress if everything succeeded
-      setTimeout(() => setUploadProgress(0), 1000)
+      console.log('Creating user account with data:', userData)
+      const authData = await onSignup(formData.email, formData.password, userData)
+      console.log('User created, user ID:', authData?.user?.id)
+
+      if (fileToUpload && authData?.user?.id) {
+        console.log('Starting image upload for user:', authData.user.id)
+        setUploadProgress(20)
+        
+        try {
+          const fileExt = fileToUpload.name.split('.').pop()
+          const fileName = `${authData.user.id}_${Date.now()}.${fileExt}`
+          const filePath = `official-ids/${fileName}`
+
+          console.log('Uploading file:', fileName, 'Size:', fileToUpload.size)
+          setUploadProgress(40)
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('documents')
+            .upload(filePath, fileToUpload, {
+              cacheControl: '3600',
+              upsert: false
+            })
+
+          if (uploadError) {
+            console.error('Upload error details:', uploadError)
+            if (uploadError.message.includes('duplicate')) {
+              throw new Error('File already exists. Please try again.')
+            } else if (uploadError.message.includes('policy')) {
+              throw new Error('Permission denied. Contact administrator.')
+            } else {
+              throw new Error(`Upload failed: ${uploadError.message}`)
+            }
+          }
+
+          console.log('Upload successful:', uploadData)
+          setUploadProgress(70)
+
+          const { data: urlData } = supabase.storage
+            .from('documents')
+            .getPublicUrl(filePath)
+
+          if (!urlData?.publicUrl) {
+            throw new Error('Failed to generate file URL')
+          }
+
+          console.log('Generated public URL:', urlData.publicUrl)
+          setUploadProgress(90)
+
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ official_id_image_url: urlData.publicUrl })
+            .eq('id', authData.user.id)
+
+          if (updateError) {
+            console.error('Failed to update profile with image URL:', updateError)
+            console.warn('User created but image URL not saved to profile')
+          } else {
+            console.log('Profile updated with image URL successfully')
+          }
+
+          setUploadProgress(100)
+          console.log('Image upload completed successfully')
+
+        } catch (imageError) {
+          console.error('Image upload failed:', imageError)
+          setError(`Account created successfully, but image upload failed: ${imageError.message}`)
+          setTimeout(() => {
+            console.log('Signup completed with image upload warning')
+          }, 3000)
+          return
+        }
+      } else {
+        console.log('No file to upload:', {
+          hasFile: !!fileToUpload,
+          fileName: fileToUpload?.name,
+          hasUserId: !!authData?.user?.id,
+          userId: authData?.user?.id
+        })
+        setUploadProgress(100)
+      }
+
+      console.log('Signup completed successfully')
+      
+    } catch (err) {
+      console.error('Signup error:', err)
+      console.log('Error details - message:', err.message, 'stack:', err.stack)
+      if (err.message.includes('User already registered')) {
+        setError('An account with this email already exists. Please try logging in instead.')
+      } else if (err.message.includes('rate limit')) {
+        setError('Too many signup attempts. Please try again later.')
+      } else if (err.message.includes('Invalid email')) {
+        setError('Please enter a valid email address.')
+      } else if (err.message.includes('Password should be at least 6 characters')) {
+        setError('Password must be at least 6 characters long.')
+      } else {
+        setError(err.message || 'Signup failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+      if (uploadProgress === 100 && !error) {
+        setTimeout(() => setUploadProgress(0), 1000)
+        console.log('Resetting upload progress to 0')
+      }
     }
   }
-}
 
   const renderStepIndicator = () => (
     <div className="flex justify-center mt-4">

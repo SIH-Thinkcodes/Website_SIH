@@ -48,7 +48,6 @@ function AppContent() {
   const [pendingOfficers, setPendingOfficers] = useState([])
   const [activeOfficers, setActiveOfficers] = useState([])
 
-  // Load officers when admin profile is available
   useEffect(() => {
     if (profile?.role === 'admin') {
       loadAllOfficers()
@@ -78,14 +77,16 @@ function AppContent() {
   }
 
   const handleLogin = async (email, password) => {
-    await login(email, password)
-    // Page navigation will be handled automatically by the auth state
+    try {
+      await login(email, password)
+    } catch (err) {
+      throw err; // Re-throw the error to be caught by Login.jsx
+    }
   }
 
   const handleSignup = async (email, password, userData) => {
     try {
       const data = await signup(email, password, userData)
-      // After successful signup, redirect to login
       setCurrentPage('login')
       return data
     } catch (error) {
@@ -141,7 +142,6 @@ function AppContent() {
     setCurrentPage(page)
   }
 
-  // Show loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -153,7 +153,6 @@ function AppContent() {
     )
   }
 
-  // Show profile error if user exists but profile failed to load
   if (user && !profile && error) {
     return (
       <ProfileError 
@@ -164,7 +163,6 @@ function AppContent() {
     )
   }
 
-  // If user is logged in and profile is loaded, show dashboard
   if (user && profile) {
     if (profile.role === 'admin') {
       return (
@@ -188,7 +186,6 @@ function AppContent() {
     }
   }
 
-  // Show appropriate auth page based on currentPage state
   switch (currentPage) {
     case 'signup':
       return (
@@ -210,12 +207,12 @@ function AppContent() {
         <Login
           onLogin={handleLogin}
           onNavigate={navigate}
+          error={error} // Pass context error as a prop
         />
       )
   }
 }
 
-// Main App wrapper with AuthProvider
 function App() {
   return (
     <div className="relative min-h-screen">

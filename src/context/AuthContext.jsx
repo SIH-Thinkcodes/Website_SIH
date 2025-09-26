@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Load user profile
   const loadProfile = async (userId) => {
     try {
       setError('')
@@ -36,11 +35,9 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Initialize auth and set up listener
   useEffect(() => {
     console.log('Initializing auth...')
 
-    // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -63,7 +60,6 @@ export const AuthProvider = ({ children }) => {
 
     getInitialSession()
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id)
@@ -83,7 +79,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  // Separate effect for loading profile when user is set
   useEffect(() => {
     if (user && !profile) {
       const fetchProfile = async () => {
@@ -99,7 +94,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user])
 
-  // Login function
   const login = async (email, password) => {
     try {
       setError('')
@@ -113,34 +107,33 @@ export const AuthProvider = ({ children }) => {
       if (authError) {
         console.error('Login error:', authError)
         
-        // Handle specific error types with user-friendly messages
+        let errorMessage = 'Login failed'
         if (authError.message?.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials.')
+          errorMessage = 'Invalid email or password. Please check your credentials.'
         } else if (authError.message?.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link.')
+          errorMessage = 'Please check your email and click the confirmation link.'
         } else if (authError.message?.includes('Too many requests')) {
-          throw new Error('Too many login attempts. Please try again later.')
+          errorMessage = 'Too many login attempts. Please try again later.'
         } else {
-          throw new Error(authError.message || 'Login failed')
+          errorMessage = authError.message || 'Login failed'
         }
+        throw new Error(errorMessage)
       }
 
       if (!data?.user) {
         throw new Error('Login failed - no user data received')
       }
 
-      // User and profile will be set by the auth state change listener
       console.log('Login successful:', data.user.id)
-      
+      return data // Return success data
     } catch (err) {
-      setError(err.message)
-      throw err
+      setError(err.message) // Set error for context, but let caller handle it
+      throw err // Propagate error to caller
     } finally {
       setLoading(false)
     }
   }
 
-  // Signup function
   const signup = async (email, password, userData) => {
     try {
       setError('')
@@ -150,11 +143,9 @@ export const AuthProvider = ({ children }) => {
       console.log('Signup successful')
       
       return authData
-      
     } catch (err) {
       console.error('Signup error:', err)
       
-      // Handle specific error types
       if (err.message?.includes('User already registered')) {
         setError('An account with this email already exists. Please try logging in.')
       } else if (err.message?.includes('Invalid email')) {
@@ -171,7 +162,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Logout function
   const logout = async () => {
     try {
       setError('')
@@ -183,7 +173,6 @@ export const AuthProvider = ({ children }) => {
       setProfile(null)
       
       console.log('Logout successful')
-      
     } catch (err) {
       console.error('Logout error:', err)
       setError('Logout failed')
@@ -191,7 +180,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Retry profile fetch
   const retryProfileFetch = async () => {
     if (!user) return
     

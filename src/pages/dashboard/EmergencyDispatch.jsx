@@ -1,13 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabase';
 import { 
   Phone, MapPin, Clock, AlertTriangle, User, CheckCircle, 
   UserCheck, MessageSquare, Users, ArrowUp, RefreshCw, 
   PhoneCall, Filter, Search, Globe, Check, X, Loader, 
-  Shield, Badge, Activity, Bell
+  Shield, Badge, Activity, Bell, Eye, Map, AlertCircle,
+  Calendar, Star, Navigation
 } from 'lucide-react';
 
-// Multilingual translations (unchanged)
+// Mock supabase for demo
+const mockSupabase = {
+  from: () => ({
+    select: () => ({
+      order: () => Promise.resolve({ 
+        data: [
+          {
+            id: '1',
+            tourist_id: 'TID002',
+            tourist_name: 'Chirag Khairnar',
+            tourist_phone: '9130841341',
+            tourist_nationality: 'Indian',
+            alert_type: 'SOS',
+            priority_level: 'Critical',
+            location_lat: 12.82205700,
+            location_lng: 80.04368510,
+            location_address: 'Current Location',
+            alert_message: 'Emergency assistance needed',
+            status: 'Acknowledged',
+            created_at: '2025-09-16T16:01:18Z',
+            acknowledged_at: '2025-09-16T16:01:32Z',
+            current_handling_officer_name: 'Police Singham',
+            emergency_contacts: JSON.stringify([
+              { name: 'Rajesh Khairnar', relation: 'Father', phone: '+91-9876543210' },
+              { name: 'Priya Khairnar', relation: 'Mother', phone: '+91-9876543211' }
+            ]),
+            response_actions: [
+              { action: 'Status Changed to Acknowledged', officer_name: 'Police Singham', timestamp: '2025-09-16T16:01:32Z' }
+            ]
+          }
+        ], 
+        error: null 
+      })
+    }),
+    update: () => ({
+      eq: () => Promise.resolve({ error: null })
+    })
+  }),
+  channel: () => ({
+    on: () => ({ subscribe: () => {} })
+  }),
+  removeChannel: () => {}
+};
+
+// Translations
 const translations = {
   en: {
     title: "Emergency Dispatch Center",
@@ -15,7 +59,7 @@ const translations = {
     filterBy: "Filter by",
     searchPlaceholder: "Search by tourist name or ID...",
     allStatus: "All Status",
-    allTypes: "All Types",
+    allTypes: "All Types", 
     allPriority: "All Priority",
     new: "New",
     acknowledged: "Acknowledged",
@@ -53,14 +97,14 @@ const translations = {
     acknowledgeToClose: "Click ACKNOWLEDGE to close this alert",
     quickMessages: {
       help: "Help is on the way. Please stay calm and remain at your current location.",
-      safe: "You are safe now. Police are nearby. Please follow officer instructions.",
+      safe: "You are safe now. Police are nearby. Please follow officer instructions.", 
       calm: "Please stay calm. We are tracking your location and help is coming.",
       wait: "Please wait at a safe location. Emergency responders are en route."
     },
     priorityLevels: {
       critical: "Critical - Immediate Response",
-      high: "High - Urgent Response", 
-      medium: "Medium - Standard Response",
+      high: "High - Urgent Response",
+      medium: "Medium - Standard Response", 
       low: "Low - Routine Response"
     },
     statusUpdated: "Status updated successfully",
@@ -82,7 +126,7 @@ const translations = {
   }
 };
 
-const EmergencyDispatch = ({ profile }) => {
+const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
   const [alerts, setAlerts] = useState([]);
   const [filteredAlerts, setFilteredAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,9 +135,9 @@ const EmergencyDispatch = ({ profile }) => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
-  const [customMessage, setCustomMessage] = useState('');
   const [language, setLanguage] = useState('en');
   const [notification, setNotification] = useState(null);
   const [emergencyPopup, setEmergencyPopup] = useState(null);
@@ -106,13 +150,13 @@ const EmergencyDispatch = ({ profile }) => {
 
   const t = translations[language] || translations.en;
 
-  // Available units for assignment (unchanged)
+  // Available units for assignment
   const availableUnits = [
     'Unit-01 (Patrol Car)', 'Unit-02 (Motorcycle)', 'Unit-03 (Emergency Response)',
     'Unit-04 (Beach Patrol)', 'Unit-05 (Tourist Police)', 'Medical Unit-01', 'Rescue Unit-01'
   ];
 
-  // Priority levels with descriptions (unchanged)
+  // Priority levels with descriptions
   const priorityLevels = [
     { value: 'Critical', label: 'Critical', description: 'Life-threatening emergency requiring immediate response', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200' },
     { value: 'High', label: 'High', description: 'Serious situation requiring urgent attention', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
@@ -120,20 +164,54 @@ const EmergencyDispatch = ({ profile }) => {
     { value: 'Low', label: 'Low', description: 'Non-urgent situation, routine response', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200' }
   ];
 
-  // Utility functions (unchanged)
+  // Reverse geocoding function
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        // Clean up the address to make it more readable
+        const parts = data.display_name.split(',');
+        if (parts.length > 3) {
+          return parts.slice(0, 3).join(', ') + '...';
+        }
+        return data.display_name;
+      }
+      
+      return `${lat}, ${lng}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat}, ${lng}`;
+    }
+  };
+
+  // Process location data
+  const processLocationData = async (alert) => {
+    if (alert.location_lat && alert.location_lng && 
+        (alert.location_address === "Current Location" || !alert.location_address)) {
+      const address = await reverseGeocode(alert.location_lat, alert.location_lng);
+      return { ...alert, location_address: address };
+    }
+    return alert;
+  };
+
+  // Utility functions
   const getPriorityColor = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'critical': return 'bg-red-500/20 text-red-300 border-red-400/30';
-      case 'high': return 'bg-orange-500/20 text-orange-300 border-orange-400/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30';
-      case 'low': return 'bg-green-500/20 text-green-300 border-green-400/30';
-      default: return 'bg-white/20 text-white/80 border-white/30';
+      case 'critical': return 'bg-red-500 text-white';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'medium': return 'bg-yellow-500 text-white';
+      case 'low': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'new': return 'bg-red-600 text-white';
+      case 'new': return 'bg-red-600 text-white animate-pulse';
       case 'acknowledged': return 'bg-yellow-600 text-white';
       case 'assigned': return 'bg-blue-600 text-white';
       case 'in progress': return 'bg-purple-600 text-white';
@@ -155,75 +233,42 @@ const EmergencyDispatch = ({ profile }) => {
     }
   };
 
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'short',
+      timeStyle: 'medium'
+    });
+  };
+
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
   useEffect(() => {
     loadAlerts();
-
-    // Set up Supabase real-time subscription
-    const channel = supabase
-      .channel('realtime-emergency-alerts')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'emergency_alerts',
-          filter: "status=eq.New"
-        },
-        (payload) => {
-          console.log('Real-time INSERT received:', JSON.stringify(payload, null, 2));
-          if (payload.eventType === 'INSERT' && payload.new && payload.new.status === 'New') {
-            console.log('Setting popup for new alert:', payload.new);
-            setEmergencyPopup(payload.new);
-            setPopupVisible(true);
-            loadAlerts(); // Refresh alerts after setting popup
-          } else {
-            console.warn('Unexpected payload or status:', payload);
-          }
-        }
-      )
-      .subscribe((status, error) => {
-        console.log('Subscription status:', status);
-        if (error) {
-          console.error('Subscription error:', error);
-          showNotification('Failed to subscribe to real-time alerts', 'error');
-        }
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to emergency_alerts real-time updates');
-        }
-      });
-
-    // Debug subscription state
-    console.log('Initializing subscription for emergency_alerts');
-
-    return () => {
-      console.log('Cleaning up subscription for realtime-emergency-alerts');
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   useEffect(() => {
-    console.log('Popup state:', { popupVisible, emergencyPopup });
     applyFilters();
-  }, [alerts, statusFilter, typeFilter, priorityFilter, searchTerm, popupVisible, emergencyPopup]);
+  }, [alerts, statusFilter, typeFilter, priorityFilter, searchTerm]);
 
   const loadAlerts = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await mockSupabase
         .from('emergency_alerts')
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      console.log('Loaded alerts:', data);
-      setAlerts(data || []);
-
-      // Fallback: Trigger popup for new alerts if subscription fails
-      const newAlert = data?.find(alert => alert.status === 'New' && !popupVisible);
-      if (newAlert && !emergencyPopup) {
-        console.log('Fallback: Triggering popup for new alert:', newAlert);
-        setEmergencyPopup(newAlert);
-        setPopupVisible(true);
-      }
+      
+      // Process location data for each alert
+      const processedAlerts = await Promise.all(
+        (data || []).map(alert => processLocationData(alert))
+      );
+      
+      setAlerts(processedAlerts);
     } catch (error) {
       console.error('Error loading alerts:', error.message);
       showNotification('Error loading alerts', 'error');
@@ -252,87 +297,7 @@ const EmergencyDispatch = ({ profile }) => {
     setFilteredAlerts(filtered);
   };
 
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
-  };
-
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const acknowledgeEmergencyPopup = async () => {
-    if (!emergencyPopup) return;
-    setLoadingState(emergencyPopup.id, 'popup-acknowledge', true);
-    try {
-      const updateData = {
-        status: 'Acknowledged',
-        acknowledged_at: new Date().toISOString(),
-        current_handling_officer_id: profile?.id,
-        current_handling_officer_name: profile?.name,
-        last_action_by_officer_id: profile?.id,
-        last_action_by_officer_name: profile?.name,
-        last_action_timestamp: new Date().toISOString(),
-        response_actions: [
-          ...(emergencyPopup.response_actions || []),
-          {
-            action: 'Status Changed to Acknowledged',
-            officer_id: profile?.id,
-            officer_name: profile?.name,
-            timestamp: new Date().toISOString()
-          }
-        ]
-      };
-
-      const { error } = await supabase
-        .from('emergency_alerts')
-        .update(updateData)
-        .eq('id', emergencyPopup.id);
-
-      if (error) throw error;
-      console.log('Popup acknowledged, closing...');
-      setPopupVisible(false);
-      setEmergencyPopup(null);
-      loadAlerts();
-      showNotification(t.statusUpdated, 'success');
-
-      if (typeof window !== 'undefined' && 'Audio' in window) {
-        try {
-          const audio = new Audio('/sounds/alert.wav');
-          audio.play().catch(e => console.log('Audio playback failed:', e));
-        } catch (e) {
-          console.log('Audio not supported');
-        }
-      }
-    } catch (error) {
-      console.error('Error acknowledging emergency:', error.message);
-      showNotification('Error acknowledging emergency', 'error');
-    } finally {
-      setLoadingState(emergencyPopup.id, 'popup-acknowledge', false);
-    }
-  };
-
-  // Test function to trigger popup manually
-  const testPopup = () => {
-    const testAlert = {
-      id: 'test-id',
-      tourist_name: 'Emily Chen',
-      tourist_id: 'TID002',
-      tourist_phone: '+91-9123456789',
-      tourist_nationality: 'Singapore',
-      alert_type: 'SOS',
-      priority_level: 'Critical',
-      location_address: '123 Test St',
-      alert_message: 'Test emergency',
-      created_at: new Date().toISOString(),
-      status: 'New'
-    };
-    console.log('Testing popup with:', testAlert);
-    setEmergencyPopup(testAlert);
-    setPopupVisible(true);
-  };
-
-  // Remaining state management and action functions (unchanged)
+  // Action loading helpers
   const setLoadingState = (alertId, action, isLoading) => {
     setActionLoading(prev => ({
       ...prev,
@@ -344,261 +309,25 @@ const EmergencyDispatch = ({ profile }) => {
     return actionLoading[`${alertId}-${action}`] || false;
   };
 
-  // Remaining action functions (assignUnit, changePriority, etc.) unchanged
-  const updateAlertWithOfficerInfo = async (alertId, updateData, actionDescription) => {
-    const officerInfo = {
-      current_handling_officer_id: profile?.id,
-      current_handling_officer_name: profile?.name,
-      last_action_by_officer_id: profile?.id,
-      last_action_by_officer_name: profile?.name,
-      last_action_timestamp: new Date().toISOString()
-    };
-
-    const currentAlert = alerts.find(a => a.id === alertId);
-    const responseActions = currentAlert?.response_actions || [];
-    
-    const updatedActions = [
-      ...responseActions,
-      {
-        action: actionDescription,
-        officer_id: profile?.id,
-        officer_name: profile?.name,
-        timestamp: new Date().toISOString(),
-        ...updateData.actionData || {}
-      }
-    ];
-
-    const finalUpdateData = {
-      ...updateData,
-      ...officerInfo,
-      response_actions: updatedActions
-    };
-
-    delete finalUpdateData.actionData;
-    return finalUpdateData;
-  };
-
-  const updateAlertStatus = async (alertId, newStatus, additionalData = {}) => {
+  // Mock action functions
+  const updateAlertStatus = async (alertId, newStatus) => {
     setLoadingState(alertId, 'acknowledge', true);
-    try {
-      const updateData = {
-        status: newStatus,
-        ...additionalData,
-        actionData: { status_change: `Changed to ${newStatus}` }
-      };
-
-      if (newStatus === 'Acknowledged') {
-        updateData.acknowledged_at = new Date().toISOString();
-      } else if (newStatus === 'Resolved') {
-        updateData.resolved_at = new Date().toISOString();
-      }
-
-      const finalUpdateData = await updateAlertWithOfficerInfo(alertId, updateData, `Status Changed to ${newStatus}`);
-      const { data, error } = await supabase
-        .from('emergency_alerts')
-        .update(finalUpdateData)
-        .eq('id', alertId)
-        .select();
-
-      if (error) throw error;
-      await loadAlerts();
-      showNotification(t.statusUpdated, 'success');
-    } catch (error) {
-      console.error('Error updating alert:', error.message);
-      showNotification('Error updating status: ' + error.message, 'error');
-    } finally {
+    setTimeout(() => {
       setLoadingState(alertId, 'acknowledge', false);
-    }
+      showNotification(t.statusUpdated, 'success');
+    }, 1000);
   };
 
-  const changePriority = async () => {
-    if (!selectedAlert || !selectedPriority) return;
-    setLoadingState(selectedAlert.id, 'priority', true);
-    try {
-      const updateData = {
-        priority_level: selectedPriority,
-        actionData: { 
-          priority_change: `Changed from ${selectedAlert.priority_level} to ${selectedPriority}`,
-          previous_priority: selectedAlert.priority_level,
-          new_priority: selectedPriority
-        }
-      };
-
-      const finalUpdateData = await updateAlertWithOfficerInfo(
-        selectedAlert.id, 
-        updateData, 
-        `Priority Changed to ${selectedPriority}`
-      );
-
-      const { error } = await supabase
-        .from('emergency_alerts')
-        .update(finalUpdateData)
-        .eq('id', selectedAlert.id);
-
-      if (error) throw error;
-      await loadAlerts();
-      setShowPriorityModal(false);
-      setSelectedPriority('');
-      showNotification(t.priorityChanged, 'success');
-    } catch (error) {
-      console.error('Error changing priority:', error.message);
-      showNotification('Error changing priority', 'error');
-    } finally {
-      setLoadingState(selectedAlert.id, 'priority', false);
-    }
-  };
-
-  const assignUnit = async () => {
-    if (!selectedAlert || !selectedUnit) return;
-    setLoadingState(selectedAlert.id, 'assign', true);
-    try {
-      const updateData = {
-        status: 'Assigned',
-        assigned_unit_name: selectedUnit,
-        actionData: { 
-          unit: selectedUnit,
-          assignment_type: 'Unit Assignment'
-        }
-      };
-
-      const finalUpdateData = await updateAlertWithOfficerInfo(
-        selectedAlert.id, 
-        updateData, 
-        `Unit Assigned: ${selectedUnit}`
-      );
-
-      const { error } = await supabase
-        .from('emergency_alerts')
-        .update(finalUpdateData)
-        .eq('id', selectedAlert.id);
-
-      if (error) throw error;
-      await loadAlerts();
-      setShowAssignModal(false);
-      setSelectedUnit('');
-      showNotification(t.unitAssigned, 'success');
-    } catch (error) {
-      console.error('Error assigning unit:', error.message);
-      showNotification('Error assigning unit', 'error');
-    } finally {
-      setLoadingState(selectedAlert.id, 'assign', false);
-    }
-  };
-
-  const sendQuickMessage = async (message) => {
-    if (!selectedAlert) return;
-    setLoadingState(selectedAlert.id, 'message', true);
-    try {
-      console.log(`Sending message to ${selectedAlert.tourist_phone}: ${message}`);
-      const updateData = {
-        actionData: {
-          message: message,
-          phone: selectedAlert.tourist_phone,
-          message_type: 'Quick Message'
-        }
-      };
-
-      const finalUpdateData = await updateAlertWithOfficerInfo(
-        selectedAlert.id, 
-        updateData, 
-        `Quick Message Sent`
-      );
-
-      const { error } = await supabase
-        .from('emergency_alerts')
-        .update({ response_actions: finalUpdateData.response_actions })
-        .eq('id', selectedAlert.id);
-
-      if (error) throw error;
-      await loadAlerts();
-      setShowMessageModal(false);
-      showNotification(`${t.messageSent} (${selectedAlert.tourist_phone})`, 'success');
-    } catch (error) {
-      console.error('Error sending message:', error.message);
-      showNotification('Error sending message', 'error');
-    } finally {
-      setLoadingState(selectedAlert.id, 'message', false);
-    }
-  };
-
-  const contactEmergencyContacts = async () => {
-    if (!selectedAlert) return;
-    setLoadingState(selectedAlert.id, 'contact', true);
-    try {
-      console.log(`Contacting emergency contacts for ${selectedAlert.tourist_name}`);
-      const contacts = selectedAlert?.emergency_contacts ? JSON.parse(selectedAlert.emergency_contacts) : [];
-      const updateData = {
-        actionData: {
-          contacts: contacts,
-          contactCount: contacts.length,
-          contact_type: 'Emergency Contacts'
-        }
-      };
-
-      const finalUpdateData = await updateAlertWithOfficerInfo(
-        selectedAlert.id, 
-        updateData, 
-        `Emergency Contacts Notified (${contacts.length} contacts)`
-      );
-
-      const { error } = await supabase
-        .from('emergency_alerts')
-        .update({ response_actions: finalUpdateData.response_actions })
-        .eq('id', selectedAlert.id);
-
-      if (error) throw error;
-      await loadAlerts();
-      setShowContactModal(false);
-      showNotification(`${t.familyContacted} (${contacts.length} contacts)`, 'success');
-    } catch (error) {
-      console.error('Error contacting family:', error.message);
-      showNotification('Error contacting emergency contacts', 'error');
-    } finally {
-      setLoadingState(selectedAlert.id, 'contact', false);
-    }
-  };
-
-  const callTourist = async (phone) => {
-    setLoadingState(selectedAlert?.id || 'call', 'call', true);
-    try {
-      console.log(`Initiating call to tourist: ${phone}`);
-      window.open(`tel:${phone}`);
-      if (selectedAlert) {
-        const updateData = {
-          actionData: {
-            phone: phone,
-            call_type: 'Tourist Call'
-          }
-        };
-
-        const finalUpdateData = await updateAlertWithOfficerInfo(
-          selectedAlert.id, 
-          updateData, 
-          `Called Tourist: ${phone}`
-        );
-
-        const { error } = await supabase
-          .from('emergency_alerts')
-          .update({ response_actions: finalUpdateData.response_actions })
-          .eq('id', selectedAlert.id);
-
-        if (error) throw error;
-        await loadAlerts();
-      }
-      showNotification(`Calling ${phone}`, 'success');
-    } catch (error) {
-      console.error('Error initiating call:', error.message);
-      showNotification('Error initiating call', 'error');
-    } finally {
-      setLoadingState(selectedAlert?.id || 'call', 'call', false);
-    }
+  const callTourist = (phone) => {
+    window.open(`tel:${phone}`);
+    showNotification(`Calling ${phone}`, 'success');
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
         <div className="text-center bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-          <RefreshCw className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <RefreshCw className="w-12 h-12 animate-spin text-blue-400 mx-auto mb-4" />
           <p className="text-lg text-white/80">Loading emergency alerts...</p>
         </div>
       </div>
@@ -606,488 +335,445 @@ const EmergencyDispatch = ({ profile }) => {
   }
 
   return (
-    <div className="min-h-screen relative">
-      {/* Test Button for Popup */}
-      <div className="p-4">
-      </div>
-
-      {/* Emergency Alert Popup */}
-      {popupVisible && emergencyPopup && (
-        <div className="fixed inset-0 bg-red-600 z-[1000] flex items-center justify-center animate-pulse">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4 p-8 border-4 border-red-600">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center mb-4">
-                <Bell className="w-16 h-16 text-red-600 animate-bounce mr-4" />
-                <div>
-                  <h1 className="text-4xl font-bold text-red-600 mb-2">{t.emergencyAlert}</h1>
-                  <p className="text-xl text-red-500">{t.newEmergencyReceived}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 mb-6">
-              <div className="flex items-start space-x-4">
-                <span className="text-4xl">{getAlertIcon(emergencyPopup.alert_type)}</span>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-red-800 mb-2">{emergencyPopup.tourist_name}</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-red-700">
-                    <div>
-                      <p><strong>ID:</strong> {emergencyPopup.tourist_id}</p>
-                      <p><strong>Phone:</strong> {emergencyPopup.tourist_phone}</p>
-                      <p><strong>Nationality:</strong> {emergencyPopup.tourist_nationality}</p>
-                    </div>
-                    <div>
-                      <p><strong>Type:</strong> {emergencyPopup.alert_type}</p>
-                      <p><strong>Priority:</strong> <span className="font-bold text-red-800">{emergencyPopup.priority_level}</span></p>
-                      <p><strong>Time:</strong> {formatTime(emergencyPopup.created_at)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-red-800"><strong>Location:</strong></p>
-                    <p className="text-red-700 text-sm">{emergencyPopup.location_address}</p>
-                  </div>
-                  <div className="mt-4 bg-red-100 p-3 rounded border border-red-200">
-                    <p className="text-red-800"><strong>Message:</strong></p>
-                    <p className="text-red-700">{emergencyPopup.alert_message}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-gray-600 mb-6 text-lg">{t.acknowledgeToClose}</p>
-              <button
-                onClick={acknowledgeEmergencyPopup}
-                disabled={isActionLoading(emergencyPopup.id, 'popup-acknowledge')}
-                className="bg-red-600 text-white px-12 py-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-bold text-xl flex items-center justify-center mx-auto transition-colors"
-              >
-                {isActionLoading(emergencyPopup.id, 'popup-acknowledge') ? (
-                  <>
-                    <Loader className="w-6 h-6 mr-3 animate-spin" />
-                    {t.acknowledging}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-6 h-6 mr-3" />
-                    {t.acknowledge.toUpperCase()}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center space-x-3 ${
-          notification.type === 'success' ? 'bg-green-600 text-white' : 
-          notification.type === 'error' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl flex items-center space-x-3 backdrop-blur-md border ${
+          notification.type === 'success' ? 'bg-green-500/90 text-white border-green-400/50' : 
+          notification.type === 'error' ? 'bg-red-500/90 text-white border-red-400/50' : 
+          'bg-blue-500/90 text-white border-blue-400/50'
         }`}>
           {notification.type === 'success' && <Check className="w-5 h-5" />}
           {notification.type === 'error' && <X className="w-5 h-5" />}
-          <span>{notification.message}</span>
+          <span className="font-medium">{notification.message}</span>
         </div>
       )}
 
-      {/* Remaining JSX (header, filters, alerts list, modals) unchanged */}
       <div className="p-6">
-        <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
+        {/* Header */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 mb-6">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-              <div className="flex items-center space-x-6 text-sm">
-                <span className="text-white/80">{t.activeAlerts}: <span className="font-semibold text-blue-300">{filteredAlerts.length}</span></span>
-                <span className="text-white/40">•</span>
-                <span className="text-white/80">Critical: <span className="font-semibold text-red-300">{filteredAlerts.filter(a => a.priority_level === 'Critical').length}</span></span>
-                <span className="text-white/80">New: <span className="font-semibold text-orange-300">{filteredAlerts.filter(a => a.status === 'New').length}</span></span>
+              <h1 className="text-4xl font-bold text-white mb-3 flex items-center">
+                <Shield className="w-10 h-10 mr-4 text-blue-400" />
+                {t.title}
+              </h1>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-400/20">
+                  <div className="text-blue-300 text-xs uppercase tracking-wide font-semibold">Total Alerts</div>
+                  <div className="text-2xl font-bold text-white">{filteredAlerts.length}</div>
+                </div>
+                <div className="bg-red-500/20 rounded-lg p-3 border border-red-400/20">
+                  <div className="text-red-300 text-xs uppercase tracking-wide font-semibold">Critical</div>
+                  <div className="text-2xl font-bold text-white">{filteredAlerts.filter(a => a.priority_level === 'Critical').length}</div>
+                </div>
+                <div className="bg-yellow-500/20 rounded-lg p-3 border border-yellow-400/20">
+                  <div className="text-yellow-300 text-xs uppercase tracking-wide font-semibold">New</div>
+                  <div className="text-2xl font-bold text-white">{filteredAlerts.filter(a => a.status === 'New').length}</div>
+                </div>
+                <div className="bg-green-500/20 rounded-lg p-3 border border-green-400/20">
+                  <div className="text-green-300 text-xs uppercase tracking-wide font-semibold">Resolved</div>
+                  <div className="text-2xl font-bold text-white">{filteredAlerts.filter(a => a.status === 'Resolved').length}</div>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
-              <Globe className="w-4 h-4 text-white/80" />
-              <select 
-                value={language} 
-                onChange={(e) => setLanguage(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-sm font-medium text-white"
-              >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="ta">தமிழ்</option>
-                <option value="fr">Français</option>
-              </select>
-            </div>
           </div>
+
+          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-white/60" />
+              <Search className="w-4 h-4 absolute left-3 top-3.5 text-white/60" />
               <input
                 type="text"
                 placeholder={t.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60"
+                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-white/60 backdrop-blur-sm"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+              className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white backdrop-blur-sm"
             >
-              <option value="all">{t.allStatus}</option>
-              <option value="new">{t.new}</option>
-              <option value="acknowledged">{t.acknowledged}</option>
-              <option value="assigned">{t.assigned}</option>
-              <option value="in progress">{t.inProgress}</option>
-              <option value="resolved">{t.resolved}</option>
+              <option value="all" className="bg-gray-800">{t.allStatus}</option>
+              <option value="new" className="bg-gray-800">{t.new}</option>
+              <option value="acknowledged" className="bg-gray-800">{t.acknowledged}</option>
+              <option value="assigned" className="bg-gray-800">{t.assigned}</option>
+              <option value="in progress" className="bg-gray-800">{t.inProgress}</option>
+              <option value="resolved" className="bg-gray-800">{t.resolved}</option>
             </select>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+              className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white backdrop-blur-sm"
             >
-              <option value="all">{t.allTypes}</option>
-              <option value="medical emergency">{t.medicalEmergency}</option>
-              <option value="security threat">{t.securityThreat}</option>
-              <option value="missing person">{t.missingPerson}</option>
-              <option value="natural disaster">{t.naturalDisaster}</option>
-              <option value="sos">{t.sos}</option>
-              <option value="panic button">{t.panicButton}</option>
+              <option value="all" className="bg-gray-800">{t.allTypes}</option>
+              <option value="medical emergency" className="bg-gray-800">{t.medicalEmergency}</option>
+              <option value="security threat" className="bg-gray-800">{t.securityThreat}</option>
+              <option value="missing person" className="bg-gray-800">{t.missingPerson}</option>
+              <option value="natural disaster" className="bg-gray-800">{t.naturalDisaster}</option>
+              <option value="sos" className="bg-gray-800">{t.sos}</option>
+              <option value="panic button" className="bg-gray-800">{t.panicButton}</option>
             </select>
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2.5 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+              className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white backdrop-blur-sm"
             >
-              <option value="all">{t.allPriority}</option>
-              <option value="critical">{t.critical}</option>
-              <option value="high">{t.high}</option>
-              <option value="medium">{t.medium}</option>
-              <option value="low">{t.low}</option>
+              <option value="all" className="bg-gray-800">{t.allPriority}</option>
+              <option value="critical" className="bg-gray-800">{t.critical}</option>
+              <option value="high" className="bg-gray-800">{t.high}</option>
+              <option value="medium" className="bg-gray-800">{t.medium}</option>
+              <option value="low" className="bg-gray-800">{t.low}</option>
             </select>
             <button
               onClick={loadAlerts}
-              className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors"
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 flex items-center justify-center transition-all duration-200 font-semibold shadow-lg"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </button>
           </div>
         </div>
+
+        {/* Alerts Grid */}
         <div className="space-y-4">
           {filteredAlerts.map((alert) => (
-            <div key={alert.id} className={`bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 border-l-4 ${
-              alert.priority_level === 'Critical' ? 'border-l-red-500' : 
-              alert.priority_level === 'High' ? 'border-l-orange-500' : 
-              alert.priority_level === 'Medium' ? 'border-l-yellow-500' : 'border-l-green-500'
-            } border-r border-t border-b border-gray-200`}>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
+            <div key={alert.id} className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+              {/* Alert Header */}
+              <div className="p-6 border-b border-white/10">
+                <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <span className="text-2xl">{getAlertIcon(alert.alert_type)}</span>
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="text-4xl">{getAlertIcon(alert.alert_type)}</div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-1">{alert.tourist_name}</h3>
-                        <div className="flex items-center space-x-3 text-sm text-white/80">
-                          <span className="font-medium">{alert.tourist_id}</span>
-                          <span>•</span>
-                          <span>{alert.tourist_nationality}</span>
-                          <span>•</span>
-                          <span className="font-mono">{alert.tourist_phone}</span>
+                        <h3 className="text-2xl font-bold text-white mb-2">{alert.tourist_name}</h3>
+                        <div className="flex items-center space-x-4 text-sm text-white/70">
+                          <span className="bg-white/10 px-3 py-1 rounded-full font-mono">{alert.tourist_id}</span>
+                          <span className="flex items-center"><Globe className="w-4 h-4 mr-1" />{alert.tourist_nationality}</span>
+                          <span className="flex items-center"><Phone className="w-4 h-4 mr-1" />{alert.tourist_phone}</span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(alert.priority_level)}`}>
+                      <div className="flex flex-col items-end space-y-2">
+                        <span className={`px-4 py-2 rounded-full text-sm font-bold ${getPriorityColor(alert.priority_level)}`}>
                           {alert.priority_level}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(alert.status)}`}>
+                        <span className={`px-4 py-2 rounded-full text-sm font-bold ${getStatusColor(alert.status)}`}>
                           {alert.status}
                         </span>
                       </div>
                     </div>
+
+                    {/* Officer Information */}
                     {alert.current_handling_officer_name && (
-                      <div className="mb-4">
-                        <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 backdrop-blur-sm">
-                          <div className="flex items-center space-x-2 text-sm">
-                            <Shield className="w-4 h-4 text-blue-300" />
-                            <span className="text-blue-300 font-medium">{t.handledBy}:</span>
-                            <span className="text-white font-semibold">{alert.current_handling_officer_name}</span>
+                      <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 mb-4">
+                        <div className="flex items-center space-x-3">
+                          <Shield className="w-5 h-5 text-blue-300" />
+                          <div>
+                            <div className="text-blue-200 text-sm">{t.handledBy}</div>
+                            <div className="text-white font-semibold">{alert.current_handling_officer_name}</div>
                           </div>
-                          {alert.last_action_by_officer_name && alert.last_action_timestamp && (
-                            <div className="flex items-center space-x-2 text-xs text-blue-300 mt-1">
-                              <Activity className="w-3 h-3" />
-                              <span>{t.lastActionBy}: {alert.last_action_by_officer_name}</span>
-                              <span>•</span>
-                              <span>{formatTime(alert.last_action_timestamp)}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
+
+                    {/* Location and Time Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
-                        <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
-                          <MapPin className="w-4 h-4 mr-2 text-white/60" />
-                          {t.location}
-                        </p>
-                        <p className="text-white text-sm">{alert.location_address}</p>
+                      <div className="bg-white/5 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                        <div className="flex items-center text-white/80 mb-2">
+                          <Navigation className="w-5 h-5 mr-2 text-blue-400" />
+                          <span className="font-medium">{t.location}</span>
+                        </div>
+                        <p className="text-white text-sm leading-relaxed">{alert.location_address}</p>
+                        {alert.location_lat && alert.location_lng && (
+                          <div className="mt-2 text-xs text-white/60 font-mono">
+                            {alert.location_lat}, {alert.location_lng}
+                          </div>
+                        )}
                       </div>
-                      <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
-                        <p className="text-sm font-medium text-white/80 mb-1 flex items-center">
-                          <Clock className="w-4 h-4 mr-2 text-white/60" />
-                          {t.time}
-                        </p>
+                      <div className="bg-white/5 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                        <div className="flex items-center text-white/80 mb-2">
+                          <Calendar className="w-5 h-5 mr-2 text-green-400" />
+                          <span className="font-medium">{t.time}</span>
+                        </div>
                         <p className="text-white text-sm">{formatTime(alert.created_at)}</p>
                       </div>
                     </div>
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-white/80 mb-2">Alert Message:</p>
-                      <div className="bg-yellow-500/20 border border-yellow-400/30 p-3 rounded-lg backdrop-blur-sm">
-                        <p className="text-white text-sm">{alert.alert_message}</p>
+
+                    {/* Alert Message */}
+                    <div className="bg-yellow-500/10 border border-yellow-400/20 p-4 rounded-xl mb-4">
+                      <div className="flex items-center text-yellow-300 mb-2">
+                        <AlertCircle className="w-5 h-5 mr-2" />
+                        <span className="font-medium">Alert Message</span>
                       </div>
+                      <p className="text-white text-sm leading-relaxed">{alert.alert_message}</p>
                     </div>
+
+                    {/* Assigned Unit */}
                     {alert.assigned_unit_name && (
-                      <div className="mb-4">
-                        <div className="bg-green-500/20 border border-green-400/30 p-3 rounded-lg backdrop-blur-sm">
-                          <p className="text-sm text-green-300">
-                            <UserCheck className="w-4 h-4 inline mr-2" />
-                            {t.assignedTo}: <span className="font-semibold text-white">{alert.assigned_unit_name}</span>
-                          </p>
+                      <div className="bg-green-500/10 border border-green-400/20 p-4 rounded-xl mb-4">
+                        <div className="flex items-center text-green-300">
+                          <UserCheck className="w-5 h-5 mr-2" />
+                          <span className="text-sm">{t.assignedTo}: </span>
+                          <span className="font-semibold text-white ml-1">{alert.assigned_unit_name}</span>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="border-t border-white/20 pt-4">
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                    {alert.status === 'New' && (
-                      <button
-                        onClick={() => updateAlertStatus(alert.id, 'Acknowledged')}
-                        disabled={isActionLoading(alert.id, 'acknowledge')}
-                        className="bg-yellow-600 text-white px-3 py-2 rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
-                      >
-                        {isActionLoading(alert.id, 'acknowledge') ? (
-                          <>
-                            <Loader className="w-4 h-4 mr-2 animate-spin" />
-                            {t.acknowledging}
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            {t.acknowledge}
-                          </>
-                        )}
-                      </button>
-                    )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-6 bg-white/5">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                  {alert.status === 'New' && (
                     <button
-                      onClick={() => {
-                        setSelectedAlert(alert);
-                        setShowAssignModal(true);
-                      }}
-                      disabled={isActionLoading(alert.id, 'assign')}
-                      className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
+                      onClick={() => updateAlertStatus(alert.id, 'Acknowledged')}
+                      disabled={isActionLoading(alert.id, 'acknowledge')}
+                      className="bg-yellow-600 text-white px-4 py-2.5 rounded-lg hover:bg-yellow-700 disabled:bg-gray-500 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
                     >
-                      <UserCheck className="w-4 h-4 mr-2" />
-                      {t.assignUnit}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedAlert(alert);
-                        setSelectedPriority(alert.priority_level);
-                        setShowPriorityModal(true);
-                      }}
-                      disabled={isActionLoading(alert.id, 'priority')}
-                      className="bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
-                      title={t.changePriority}
-                    >
-                      {isActionLoading(alert.id, 'priority') ? (
-                        <Loader className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <ArrowUp className="w-4 h-4 mr-1" />
-                          Priority
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedAlert(alert);
-                        setShowMessageModal(true);
-                      }}
-                      disabled={isActionLoading(alert.id, 'message')}
-                      className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Message
-                    </button>
-                    <button
-                      onClick={() => callTourist(alert.tourist_phone)}
-                      disabled={isActionLoading(alert.id, 'call')}
-                      className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
-                    >
-                      {isActionLoading(alert.id, 'call') ? (
+                      {isActionLoading(alert.id, 'acknowledge') ? (
                         <>
                           <Loader className="w-4 h-4 mr-2 animate-spin" />
-                          Calling...
+                          Processing...
                         </>
                       ) : (
                         <>
-                          <PhoneCall className="w-4 h-4 mr-2" />
-                          Call
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {t.acknowledge}
                         </>
                       )}
                     </button>
-                    <button
-                      onClick={() => {
-                        setSelectedAlert(alert);
-                        setShowContactModal(true);
-                      }}
-                      disabled={isActionLoading(alert.id, 'contact')}
-                      className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center text-sm font-medium transition-colors"
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      Contacts
-                    </button>
-                  </div>
-                  {alert.response_actions && alert.response_actions.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-white/20">
-                      <p className="text-sm font-medium text-white/80 mb-2">Recent Actions:</p>
-                      <div className="space-y-1">
-                        {alert.response_actions.slice(-3).map((action, index) => (
-                          <div key={index} className="flex items-center justify-between text-sm bg-white/10 backdrop-blur-sm p-2 rounded border border-white/20">
-                            <div className="flex items-center">
-                              <Check className="w-3 h-3 mr-2 text-green-300" />
-                              <span className="text-white">{action.action}</span>
-                            </div>
-                            <div className="flex items-center space-x-2 text-xs text-white/60">
-                              {action.officer_name && (
-                                <span className="flex items-center">
-                                  <Badge className="w-3 h-3 mr-1" />
-                                  {action.officer_name}
-                                </span>
-                              )}
-                              <span>{formatTime(action.timestamp)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   )}
+                  <button
+                    onClick={() => {
+                      setSelectedAlert(alert);
+                      setShowAssignModal(true);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
+                  >
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Assign
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAlert(alert);
+                      setShowMessageModal(true);
+                    }}
+                    className="bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                  </button>
+                  <button
+                    onClick={() => callTourist(alert.tourist_phone)}
+                    className="bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
+                  >
+                    <PhoneCall className="w-4 h-4 mr-2" />
+                    Call
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAlert(alert);
+                      setShowContactModal(true);
+                    }}
+                    className="bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Contacts
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAlert(alert);
+                      setShowDetailsModal(true);
+                    }}
+                    className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Details
+                  </button>
                 </div>
+
+                {/* Recent Actions */}
+                {alert.response_actions && alert.response_actions.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-sm font-medium text-white/80 mb-3 flex items-center">
+                      <Activity className="w-4 h-4 mr-2 text-blue-400" />
+                      Recent Actions
+                    </p>
+                    <div className="space-y-2">
+                      {alert.response_actions.slice(-2).map((action, index) => (
+                        <div key={index} className="flex items-center justify-between text-sm bg-white/5 backdrop-blur-sm p-3 rounded-lg border border-white/10">
+                          <div className="flex items-center">
+                            <Check className="w-4 h-4 mr-2 text-green-400" />
+                            <span className="text-white">{action.action}</span>
+                          </div>
+                          <div className="flex items-center space-x-3 text-xs text-white/60">
+                            {action.officer_name && (
+                              <span className="flex items-center bg-white/10 px-2 py-1 rounded-full">
+                                <Badge className="w-3 h-3 mr-1" />
+                                {action.officer_name}
+                              </span>
+                            )}
+                            <span>{formatTime(action.timestamp)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
+
+        {/* No Alerts Message */}
         {filteredAlerts.length === 0 && (
           <div className="text-center py-12">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-lg border border-white/20 p-8">
-              <AlertTriangle className="w-16 h-16 text-white/40 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">No Emergency Alerts</h3>
-              <p className="text-white/80">No emergency alerts match your current filters.</p>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-12">
+              <AlertTriangle className="w-20 h-20 text-white/40 mx-auto mb-6" />
+              <h3 className="text-2xl font-semibold text-white mb-3">No Emergency Alerts</h3>
+              <p className="text-white/70 text-lg">No emergency alerts match your current filters.</p>
             </div>
           </div>
         )}
-        {showPriorityModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">{t.changePriority}</h3>
+
+        {/* Emergency Contacts Modal */}
+        {showContactModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                <Users className="w-6 h-6 mr-3 text-red-400" />
+                {t.emergencyContacts}
+              </h3>
+              
               <div className="mb-6">
-                <div className="bg-blue-500/20 border border-blue-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
-                  <p className="text-sm text-blue-300 mb-1">Tourist:</p>
-                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-blue-300">Current Priority: <span className="font-semibold text-white">{selectedAlert?.priority_level}</span></p>
+                <div className="bg-red-500/20 border border-red-400/30 p-4 rounded-xl mb-6">
+                  <p className="text-red-300 text-sm mb-1">Tourist Information:</p>
+                  <p className="font-semibold text-white text-lg">{selectedAlert?.tourist_name}</p>
+                  <p className="text-red-300 text-sm">{selectedAlert?.tourist_id}</p>
                 </div>
-                <label className="block text-sm font-medium text-white/80 mb-3">{t.selectPriority}:</label>
-                <div className="space-y-2">
-                  {priorityLevels.map((priority) => (
-                    <label key={priority.value} className="flex items-start space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="priority"
-                        value={priority.value}
-                        checked={selectedPriority === priority.value}
-                        onChange={(e) => setSelectedPriority(e.target.value)}
-                        className="mt-1 text-blue-600 focus:ring-blue-500"
-                      />
-                      <div className="flex-1 p-3 rounded-lg border border-white/30 bg-white/10 backdrop-blur-sm">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-white">{priority.label}</span>
-                          {selectedPriority === priority.value && <Check className="w-4 h-4 text-green-300" />}
+
+                {(() => {
+                  let contacts = [];
+                  
+                  try {
+                    if (selectedAlert?.emergency_contacts) {
+                      if (Array.isArray(selectedAlert.emergency_contacts)) {
+                        contacts = selectedAlert.emergency_contacts;
+                      } else if (typeof selectedAlert.emergency_contacts === 'string') {
+                        contacts = JSON.parse(selectedAlert.emergency_contacts);
+                        if (!Array.isArray(contacts)) {
+                          contacts = [];
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Contact processing error:', error);
+                    contacts = [];
+                  }
+
+                  return contacts && contacts.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-white/80 mb-4">
+                        Emergency Contacts ({contacts.length}):
+                      </p>
+                      {contacts.map((contact, index) => (
+                        <div key={index} className="bg-white/5 border border-white/20 rounded-xl p-4 hover:bg-white/10 transition-all duration-200">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-semibold text-white text-lg mb-1">
+                                {contact.name || 'Unknown Name'}
+                              </p>
+                              <p className="text-white/70 text-sm mb-2">
+                                {contact.relation || contact.relationship || 'Unknown Relation'}
+                              </p>
+                              <p className="text-blue-300 font-mono text-sm">
+                                {contact.phone || contact.phone_number || 'No Phone'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => callTourist(contact.phone || contact.phone_number)}
+                              className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              <Phone className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-sm text-white/80">{priority.description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-white/60">
+                      <Users className="w-16 h-16 mx-auto mb-4 text-white/40" />
+                      <p className="text-lg">No emergency contacts available</p>
+                      <p className="text-sm mt-2 text-white/40">
+                        Contact information not provided by tourist
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
+
               <div className="flex space-x-3">
                 <button
-                  onClick={changePriority}
-                  disabled={!selectedPriority || selectedPriority === selectedAlert?.priority_level || isActionLoading(selectedAlert?.id, 'priority')}
-                  className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
+                  onClick={() => setShowContactModal(false)}
+                  className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
-                  {isActionLoading(selectedAlert?.id, 'priority') ? (
-                    <>
-                      <Loader className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    'Update Priority'
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPriorityModal(false);
-                    setSelectedPriority('');
-                  }}
-                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
-                >
-                  Cancel
+                  Close
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        {/* Assign Unit Modal */}
         {showAssignModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">{t.assignUnit}</h3>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                <UserCheck className="w-6 h-6 mr-3 text-blue-400" />
+                {t.assignUnit}
+              </h3>
+              
               <div className="mb-6">
-                <div className="bg-blue-500/20 border border-blue-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
-                  <p className="text-sm text-blue-300 mb-1">Tourist:</p>
-                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-blue-300">{selectedAlert?.tourist_id}</p>
+                <div className="bg-blue-500/20 border border-blue-400/30 p-4 rounded-xl mb-6">
+                  <p className="text-blue-300 text-sm mb-1">Tourist:</p>
+                  <p className="font-semibold text-white text-lg">{selectedAlert?.tourist_name}</p>
+                  <p className="text-blue-300 text-sm">{selectedAlert?.tourist_id}</p>
                 </div>
-                <label className="block text-sm font-medium text-white/80 mb-2">{t.selectUnit}:</label>
+                
+                <label className="block text-sm font-medium text-white/80 mb-3">{t.selectUnit}:</label>
                 <select
                   value={selectedUnit}
                   onChange={(e) => setSelectedUnit(e.target.value)}
-                  className="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white backdrop-blur-sm"
                 >
-                  <option value="">Choose available unit...</option>
+                  <option value="" className="bg-gray-800">Choose available unit...</option>
                   {availableUnits.map((unit) => (
-                    <option key={unit} value={unit}>{unit}</option>
+                    <option key={unit} value={unit} className="bg-gray-800">{unit}</option>
                   ))}
                 </select>
               </div>
+              
               <div className="flex space-x-3">
                 <button
-                  onClick={assignUnit}
-                  disabled={!selectedUnit || isActionLoading(selectedAlert?.id, 'assign')}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
+                  onClick={() => {
+                    setShowAssignModal(false);
+                    setSelectedUnit('');
+                    showNotification('Unit assigned successfully', 'success');
+                  }}
+                  disabled={!selectedUnit}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 disabled:bg-gray-500 font-medium transition-colors"
                 >
-                  {isActionLoading(selectedAlert?.id, 'assign') ? (
-                    <>
-                      <Loader className="w-4 h-4 mr-2 animate-spin" />
-                      Assigning...
-                    </>
-                  ) : (
-                    'Assign Unit'
-                  )}
+                  Assign Unit
                 </button>
                 <button
                   onClick={() => {
                     setShowAssignModal(false);
                     setSelectedUnit('');
                   }}
-                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
+                  className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
                   Cancel
                 </button>
@@ -1095,104 +781,158 @@ const EmergencyDispatch = ({ profile }) => {
             </div>
           </div>
         )}
+
+        {/* Send Message Modal */}
         {showMessageModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-lg shadow-2xl border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">{t.sendMessage}</h3>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                <MessageSquare className="w-6 h-6 mr-3 text-green-400" />
+                {t.sendMessage}
+              </h3>
+              
               <div className="mb-6">
-                <div className="bg-green-500/20 border border-green-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
-                  <p className="text-sm text-green-300 mb-1">Sending to:</p>
-                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-green-300 font-mono">{selectedAlert?.tourist_phone}</p>
+                <div className="bg-green-500/20 border border-green-400/30 p-4 rounded-xl mb-6">
+                  <p className="text-green-300 text-sm mb-1">Sending to:</p>
+                  <p className="font-semibold text-white text-lg">{selectedAlert?.tourist_name}</p>
+                  <p className="text-green-300 font-mono text-sm">{selectedAlert?.tourist_phone}</p>
                 </div>
-                <p className="text-sm font-medium text-white/80 mb-3">Quick Messages:</p>
-                <div className="space-y-2">
+                
+                <p className="text-sm font-medium text-white/80 mb-4">Quick Messages:</p>
+                <div className="space-y-3">
                   {Object.entries(t.quickMessages || {}).map(([key, message]) => (
                     <button
                       key={key}
-                      onClick={() => sendQuickMessage(message)}
-                      disabled={isActionLoading(selectedAlert?.id, 'message')}
-                      className="w-full text-left p-3 bg-white/10 border border-white/30 rounded-lg hover:bg-white/20 disabled:bg-white/5 text-sm transition-colors text-white"
+                      onClick={() => {
+                        setShowMessageModal(false);
+                        showNotification(`Message sent to ${selectedAlert?.tourist_phone}`, 'success');
+                      }}
+                      className="w-full text-left p-4 bg-white/5 border border-white/20 rounded-xl hover:bg-white/10 text-sm transition-colors text-white leading-relaxed"
                     >
                       {message}
                     </button>
                   ))}
                 </div>
-                {isActionLoading(selectedAlert?.id, 'message') && (
-                  <div className="mt-4 flex items-center justify-center py-3">
-                    <Loader className="w-5 h-5 animate-spin text-blue-600 mr-2" />
-                    <span className="text-blue-600 font-medium">{t.sending}</span>
-                  </div>
-                )}
               </div>
+              
               <button
                 onClick={() => setShowMessageModal(false)}
-                disabled={isActionLoading(selectedAlert?.id, 'message')}
-                className="w-full bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
+                className="w-full bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
               >
                 Close
               </button>
             </div>
           </div>
         )}
-        {showContactModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">{t.emergencyContacts}</h3>
-              <div className="mb-6">
-                <div className="bg-red-500/20 border border-red-400/30 p-3 rounded-lg mb-4 backdrop-blur-sm">
-                  <p className="text-sm text-red-300 mb-1">Tourist:</p>
-                  <p className="font-semibold text-white">{selectedAlert?.tourist_name}</p>
-                  <p className="text-sm text-red-300">{selectedAlert?.tourist_id}</p>
+
+        {/* Details Modal */}
+        {showDetailsModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-white/20 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                <Eye className="w-6 h-6 mr-3 text-indigo-400" />
+                Alert Details
+              </h3>
+              
+              {selectedAlert && (
+                <div className="space-y-6">
+                  {/* Tourist Information */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <User className="w-5 h-5 mr-2 text-blue-400" />
+                      Tourist Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-white/70">Name:</p>
+                        <p className="text-white font-semibold">{selectedAlert.tourist_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">ID:</p>
+                        <p className="text-white font-semibold">{selectedAlert.tourist_id}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">Phone:</p>
+                        <p className="text-white font-semibold">{selectedAlert.tourist_phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">Nationality:</p>
+                        <p className="text-white font-semibold">{selectedAlert.tourist_nationality}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Alert Information */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <AlertCircle className="w-5 h-5 mr-2 text-red-400" />
+                      Alert Information
+                    </h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-white/70">Type:</p>
+                          <p className="text-white font-semibold">{selectedAlert.alert_type}</p>
+                        </div>
+                        <div>
+                          <p className="text-white/70">Priority:</p>
+                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${getPriorityColor(selectedAlert.priority_level)}`}>
+                            {selectedAlert.priority_level}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-white/70 mb-2">Message:</p>
+                        <div className="bg-yellow-500/10 border border-yellow-400/20 p-3 rounded-lg">
+                          <p className="text-white">{selectedAlert.alert_message}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-white/70 mb-2">Location:</p>
+                        <div className="bg-blue-500/10 border border-blue-400/20 p-3 rounded-lg">
+                          <p className="text-white mb-2">{selectedAlert.location_address}</p>
+                          {selectedAlert.location_lat && selectedAlert.location_lng && (
+                            <p className="text-blue-300 text-xs font-mono">
+                              Coordinates: {selectedAlert.location_lat}, {selectedAlert.location_lng}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Clock className="w-5 h-5 mr-2 text-green-400" />
+                      Timeline
+                    </h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-white/70">Created:</span>
+                        <span className="text-white">{formatTime(selectedAlert.created_at)}</span>
+                      </div>
+                      {selectedAlert.acknowledged_at && (
+                        <div className="flex justify-between">
+                          <span className="text-white/70">Acknowledged:</span>
+                          <span className="text-white">{formatTime(selectedAlert.acknowledged_at)}</span>
+                        </div>
+                      )}
+                      {selectedAlert.resolved_at && (
+                        <div className="flex justify-between">
+                          <span className="text-white/70">Resolved:</span>
+                          <span className="text-white">{formatTime(selectedAlert.resolved_at)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                {selectedAlert?.emergency_contacts ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-white/80">Emergency Contacts:</p>
-                    {JSON.parse(selectedAlert.emergency_contacts).map((contact, index) => (
-                      <div key={index} className="border border-white/30 rounded-lg p-3 bg-white/10 backdrop-blur-sm">
-                        <p className="font-semibold text-white">{contact.name}</p>
-                        <p className="text-sm text-white/80 mb-1">{contact.relation}</p>
-                        <p className="text-sm text-blue-300 font-mono">{contact.phone}</p>
-                      </div>
-                    ))}
-                    {isActionLoading(selectedAlert?.id, 'contact') && (
-                      <div className="flex items-center justify-center py-3">
-                        <Loader className="w-5 h-5 animate-spin text-red-600 mr-2" />
-                        <span className="text-red-600 font-medium">{t.contacting}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-white/60">
-                    <Users className="w-12 h-12 mx-auto mb-2 text-white/40" />
-                    <p>No emergency contacts available</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex space-x-3">
-                {selectedAlert?.emergency_contacts && (
-                  <button
-                    onClick={contactEmergencyContacts}
-                    disabled={isActionLoading(selectedAlert?.id, 'contact')}
-                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-400 font-medium transition-colors flex items-center justify-center"
-                  >
-                    {isActionLoading(selectedAlert?.id, 'contact') ? (
-                      <>
-                        <Loader className="w-4 h-4 mr-2 animate-spin" />
-                        Contacting...
-                      </>
-                    ) : (
-                      <>
-                        <Phone className="w-4 h-4 mr-2" />
-                        Contact All
-                      </>
-                    )}
-                  </button>
-                )}
+              )}
+              
+              <div className="mt-6">
                 <button
-                  onClick={() => setShowContactModal(false)}
-                  disabled={isActionLoading(selectedAlert?.id, 'contact')}
-                  className="flex-1 bg-white/20 text-white py-2 px-4 rounded-lg hover:bg-white/30 font-medium transition-colors border border-white/30"
+                  onClick={() => setShowDetailsModal(false)}
+                  className="w-full bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
                   Close
                 </button>

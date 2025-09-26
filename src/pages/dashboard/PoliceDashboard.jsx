@@ -1,21 +1,19 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin, User, Globe, RefreshCw } from 'lucide-react'
-import { dashboardAPI, supabase } from '../../utils/supabase'
-
-// Import page components
-import TouristSearch from './TouristSearch'
-import EmergencyDispatch from './EmergencyDispatch'
-import FIRGenerator from './FIRGenerator'
-import CitizenChat from './CitizenChat'
-import MissingPersons from './MissingPersons'
-import TouristHeatMap from './TouristHeatMap'
+import { useState, useEffect, useCallback } from 'react';
+import { Shield, CheckCircle, Clock, AlertCircle, LogOut, Lock, Search, Phone, FileText, MessageCircle, Users, Menu, X, MapPin, User, Globe, RefreshCw } from 'lucide-react';
+import { dashboardAPI, supabase } from '../../utils/supabase';
+import TouristSearch from './TouristSearch';
+import EmergencyDispatch from './EmergencyDispatch';
+import FIRGenerator from './FIRGenerator';
+import CitizenChat from './CitizenChat';
+import MissingPersons from './MissingPersons';
+import TouristSafetyDashboard from './TouristSafetyDashboard';
 
 const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
-  const [currentPage, setCurrentPage] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [language, setLanguage] = useState('english')
-  const [incomingEmergency] = useState(null)
-  const [showEmergencyOverlay, setShowEmergencyOverlay] = useState(false)
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [language, setLanguage] = useState('english');
+  const [incomingEmergency, setIncomingEmergency] = useState(null);
+  const [showEmergencyOverlay, setShowEmergencyOverlay] = useState(false);
   
   // Dashboard statistics state
   const [dashboardStats, setDashboardStats] = useState({
@@ -23,78 +21,79 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     totalReports: 0,
     pendingTasks: 0,
     recentActivity: []
-  })
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [statsError, setStatsError] = useState(null)
-  const [lastUpdated, setLastUpdated] = useState(null)
-  const [now, setNow] = useState(new Date())
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [now, setNow] = useState(new Date());
 
   // Function to fetch dashboard statistics
   const fetchDashboardStats = useCallback(async () => {
-    if (!profile?.id) return
+    if (!profile?.id) return;
     
     try {
-      setStatsLoading(true)
-      setStatsError(null)
+      setStatsLoading(true);
+      setStatsError(null);
       
-      const stats = await dashboardAPI.getDashboardStats(profile.id)
-      setDashboardStats(stats)
-      setLastUpdated(new Date())
+      const stats = await dashboardAPI.getDashboardStats(profile.id);
+      setDashboardStats(stats);
+      setLastUpdated(new Date());
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
-      setStatsError('Failed to load dashboard data')
+      console.error('Error fetching dashboard stats:', error);
+      setStatsError('Failed to load dashboard data');
     } finally {
-      setStatsLoading(false)
+      setStatsLoading(false);
     }
-  }, [profile?.id])
+  }, [profile?.id]);
 
   // Function to refresh dashboard data
   const refreshDashboard = () => {
-    fetchDashboardStats()
-  }
+    fetchDashboardStats();
+  };
 
   // Fetch dashboard stats on component mount and when profile changes
   useEffect(() => {
     if (profile?.id && isVerified) {
-      fetchDashboardStats()
+      fetchDashboardStats();
     }
-  }, [profile?.id, isVerified, fetchDashboardStats])
+  }, [profile?.id, isVerified, fetchDashboardStats]);
 
   // Set up real-time updates every 30 seconds
   useEffect(() => {
-    if (!profile?.id || !isVerified) return
+    if (!profile?.id || !isVerified) return;
 
     const interval = setInterval(() => {
-      fetchDashboardStats()
-    }, 30000) // Update every 30 seconds
+      fetchDashboardStats();
+    }, 30000); // Update every 30 seconds
 
-    return () => clearInterval(interval)
-  }, [profile?.id, isVerified, fetchDashboardStats])
+    return () => clearInterval(interval);
+  }, [profile?.id, isVerified, fetchDashboardStats]);
 
   // Live ticking clock (updates every second)
   useEffect(() => {
-    const tick = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(tick)
-  }, [])
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   // Realtime: listen for emergency alerts and block UI until acknowledged
   useEffect(() => {
-    if (!profile?.id) return
+    if (!profile?.id) return;
 
     const channel = supabase
       .channel('emergency_alerts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_alerts' }, () => {
-        setShowEmergencyOverlay(true)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_alerts' }, (payload) => {
+        setIncomingEmergency(payload.new);
+        setShowEmergencyOverlay(true);
       })
-      .subscribe()
+      .subscribe();
 
-    return () => { channel.unsubscribe() }
-  }, [profile?.id])
+    return () => { channel.unsubscribe(); };
+  }, [profile?.id]);
 
   const acknowledgeEmergency = () => {
-    setShowEmergencyOverlay(false)
-    setCurrentPage('emergency-dispatch')
-  }
+    setShowEmergencyOverlay(false);
+    setCurrentPage('emergency-dispatch');
+  };
 
   // Language options
   const languageOptions = [
@@ -110,14 +109,14 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     { code: 'punjabi', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
     { code: 'odia', name: 'Odia', native: 'ଓଡ଼ିଆ' },
     { code: 'assamese', name: 'Assamese', native: 'অসমীয়া' }
-  ]
+  ];
 
-  // Translation object
+  // Translation object (same as provided)
   const translations = {
     english: {
       dashboard: 'Dashboard',
       touristSearch: 'Tourist Search',
-      touristAnalytics: 'Tourist Analytics',
+      touristSafety: 'Tourist Safety',
       emergencyDispatch: 'Emergency Dispatch',
       firGenerator: 'E-FIR Generator',
       citizenChat: 'Citizen Support Chat',
@@ -148,7 +147,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     hindi: {
       dashboard: 'डैशबोर्ड',
       touristSearch: 'पर्यटक खोज',
-      touristAnalytics: 'पर्यटक विश्लेषण',
+      touristSafety: 'पर्यटक सुरक्षा',
       emergencyDispatch: 'आपातकालीन प्रेषण',
       firGenerator: 'ई-एफआईआर जेनरेटर',
       citizenChat: 'नागरिक सहायता चैट',
@@ -179,7 +178,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     tamil: {
       dashboard: 'டாஷ்போர்டு',
       touristSearch: 'சுற்றுலா தேடல்',
-      touristAnalytics: 'சுற்றுலா பகுப்பாய்வு',
+      touristSafety: 'சுற்றுலா பாதுகாப்பு',
       emergencyDispatch: 'அவசர அனுப்பீடு',
       firGenerator: 'ஈ-எஃப்ஐஆர் ஜெனரேட்டர்',
       citizenChat: 'குடிமக்கள் ஆதரவு அரட்டை',
@@ -210,7 +209,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     gujarati: {
       dashboard: 'ડેશબોર્ડ',
       touristSearch: 'પ્રવાસી શોધ',
-      touristAnalytics: 'પ્રવાસી વિશ્લેષણ',
+      touristSafety: 'પ્રવાસી સલામતી',
       emergencyDispatch: 'અત્યાજયક ડિસ્પેચ',
       firGenerator: 'ઈ-એફઆઈઆર જનરેટર',
       citizenChat: 'નાગરિક સહાય ચેટ',
@@ -241,7 +240,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     bengali: {
       dashboard: 'ড্যাশবোর্ড',
       touristSearch: 'পর্যটক অনুসন্ধান',
-      touristAnalytics: 'পর্যটক বিশ্লেষণ',
+      touristSafety: 'পর্যটক নিরাপত্তা',
       emergencyDispatch: 'জরুরি প্রেরণ',
       firGenerator: 'ই-এফআইআর জেনারেটর',
       citizenChat: 'নাগরিক সহায়তা চ্যাট',
@@ -269,12 +268,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: 'প্রশাসক আপনার পরিচয়পত্র পর্যালোচনা করবেন এবং 24-48 ঘন্টার মধ্যে আপনার অ্যাকাউন্ট অনুমোদন করবেন। অনুমোদিত হলে আপনি ইমেইল বিজ্ঞপ্তি পাবেন।',
       pendingVerification: 'মুলতবি যাচাইকরণ'
     },
-
-    // Added languages
     marathi: {
       dashboard: 'डॅशबोर्ड',
       touristSearch: 'पर्यटक शोध',
-      touristAnalytics: 'पर्यटक विश्लेषण',
+      touristSafety: 'पर्यटक सुरक्षा',
       emergencyDispatch: 'आपत्कालीन प्रेषण',
       firGenerator: 'ई-एफआयआर जनरेटर',
       citizenChat: 'नागरिक सहाय्य चॅट',
@@ -302,12 +299,41 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '२४-४८ तासांत मंजुरीची सूचना ईमेलवर मिळेल.',
       pendingVerification: 'पडताळणी प्रलंबित'
     },
-
-    // Removed non-Indian languages and added more Indian languages
+    telugu: {
+      dashboard: 'డాష్‌బోర్డ్',
+      touristSearch: 'పర్యాటక శోధన',
+      touristSafety: 'పర్యాటక భద్రత',
+      emergencyDispatch: 'అత్యవసర డిస్పాచ్',
+      firGenerator: 'ఇ-ఎఫ్‌ఐఆర్ జనరేటర్',
+      citizenChat: 'పౌర సహాయ చాట్',
+      missingPersons: 'మిస్సింగ్ పర్సన్స్ రిజిస్ట్రీ',
+      policePortal: 'పోలీస్ పోర్టల్',
+      officerDashboard: 'అధికారి డాష్‌బోర్డ్',
+      activeCases: 'సక్రియ కేసులు',
+      reportsFiled: 'నమోదైన నివేదికలు',
+      pendingTasks: 'పెండింగ్ టాస్క్‌లు',
+      welcomeToPolicePortal: 'పోలీస్ పోర్టల్‌కు స్వాగతం',
+      accountVerified: 'మీ ఖాతా ధృవీకరించబడింది మరియు ఇప్పుడు మీకు పోలీస్ పోర్టల్ యొక్క అన్ని ఫీచర్లకు పూర్తి యాక్సెస్ ఉంది.',
+      officer: 'అధికారి',
+      badgeStation: 'బ్యాడ్జ్ / స్టేషన్',
+      today: 'ఈ రోజు',
+      verified: 'ధృవీకరించబడింది',
+      logout: 'లాగ్అవుట్',
+      accountUnderReview: 'ఖాతా సమీక్షలో ఉంది',
+      accountReviewText: 'మీ పోలీస్ అధికారి ఖాతా ప్రస్తుతం అడ్మినిస్ట్రేటర్ ద్వారా సమీక్షలో ఉంది. మీ ప్రొఫైల్ ధృవీకరించబడిన తర్వాత మీకు సిస్టమ్‌కు పూర్తి యాక్సెస్ లభిస్తుంది.',
+      registrationDetails: 'మీ రిజిస్ట్రేషన్ వివరాలు',
+      name: 'పేరు',
+      email: 'ఇమెయిల్',
+      badgeNumber: 'బ్యాడ్జ్ నంబర్',
+      station: 'స్టేషన్',
+      whatHappensNext: 'తర్వాత ఏమి జరుగుతుంది?',
+      nextStepsText: 'అడ్మినిస్ట్రేటర్ మీ ఆధారాలను సమీక్షించి, 24-48 గంటల్లో మీ ఖాతాను ఆమోదిస్తారు. ఆమోదం పొందిన తర్వాత మీకు ఇమెయిల్ నోటిఫికేషన్ వస్తుంది.',
+      pendingVerification: 'ధృవీకరణ పెండింగ్‌లో ఉంది'
+    },
     kannada: {
       dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
       touristSearch: 'ಪ್ರವಾಸಿ ಹುಡುಕಾಟ',
-      touristAnalytics: 'ಪ್ರವಾಸಿ ವಿಶ್ಲೇಷಣೆ',
+      touristSafety: 'ಪ್ರವಾಸಿ ಭದ್ರತೆ',
       emergencyDispatch: 'ತುರ್ತು ನಿಯೋಜನೆ',
       firGenerator: 'ಇ-ಎಫ್‌ಐಆರ್ ಜೆನೆರೇಟರ್',
       citizenChat: 'ನಾಗರಿಕ ಸಹಾಯ ಚಾಟ್',
@@ -335,11 +361,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '24–48 ಗಂಟೆಗಳಲ್ಲಿ ಇಮೇಲ್ ಮೂಲಕ ಮಾಹಿತಿ ಬರುತ್ತದೆ.',
       pendingVerification: 'ಪರಿಶೀಲನೆ ಬಾಕಿ'
     },
-
     malayalam: {
       dashboard: 'ഡാഷ്ബോർഡ്',
       touristSearch: 'സഞ്ചാരിയെ തിരയുക',
-      touristAnalytics: 'സഞ്ചാരികളുടെ വിശകലനം',
+      touristSafety: 'സഞ്ചാരി ഭദ്രത',
       emergencyDispatch: 'അടിയന്തര ഡിസ്‌പാച്ച്',
       firGenerator: 'ഇ-എഫ്ഐആർ ജനറേറ്റർ',
       citizenChat: 'പൗരൻ സഹായ ചാറ്റ്',
@@ -367,11 +392,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '24–48 മണിക്കൂറിനുള്ളിൽ ഇമെയിൽ വഴി അറിയിക്കും.',
       pendingVerification: 'സ്ഥിരീകരണം ബാക്കിയാണ്'
     },
-
     punjabi: {
       dashboard: 'ਡੈਸ਼ਬੋਰਡ',
       touristSearch: 'ਸੈਲਾਨੀ ਖੋਜ',
-      touristAnalytics: 'ਸੈਲਾਨੀ ਵਿਸ਼ਲੇਸ਼ਣ',
+      touristSafety: 'ਸੈਲਾਨੀ ਸੁਰੱਖਿਆ',
       emergencyDispatch: 'ਐਮਰਜੈਂਸੀ ਡਿਸਪੈਚ',
       firGenerator: 'ਈ-ਐੱਫਆਈਆਰ ਜਨਰੇਟਰ',
       citizenChat: 'ਨਾਗਰਿਕ ਸਹਾਇਤਾ ਚੈਟ',
@@ -399,11 +423,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '24–48 ਘੰਟਿਆਂ ਵਿੱਚ ਈਮੇਲ ਰਾਹੀਂ ਸੂਚਨਾ ਆਵੇਗੀ।',
       pendingVerification: 'ਪ੍ਰਮਾਣਿਤੀਕਰਨ ਬਕਾਇਆ'
     },
-
     odia: {
       dashboard: 'ଡ୍ୟାଶବୋର୍ଡ',
       touristSearch: 'ପର୍ଯ୍ଯଟକ ଖୋଜ',
-      touristAnalytics: 'ପର୍ଯ୍ଯଟକ ବିଶ୍ଳେଷଣ',
+      touristSafety: 'ପର୍ଯ୍ଯଟକ ସୁରକ୍ଷା',
       emergencyDispatch: 'ଜରୁରୀ ଡିସ୍ପାଚ୍',
       firGenerator: 'ଇ-ଏଫ୍‌ଆଇଆର୍ ଜେନେରେଟର୍',
       citizenChat: 'ନାଗରିକ ସହାୟତା ଚ୍ୟାଟ୍',
@@ -431,11 +454,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '24–48 ଘଣ୍ଟାରେ ଇମେଲ୍ ଆସିବ।',
       pendingVerification: 'ଯାଞ୍ଚ ବକେୟା'
     },
-
     assamese: {
       dashboard: 'ডেশব’ৰ্ড',
       touristSearch: 'পর্যটক সন্ধান',
-      touristAnalytics: 'পর্যটক বিশ্লেষণ',
+      touristSafety: 'পর্যটক সুৰক্ষা',
       emergencyDispatch: 'জৰুৰী প্ৰেৰণ',
       firGenerator: 'ই-এফআইআৰ জেনেৰেটৰ',
       citizenChat: 'নাগরিক সহায়তা চেট',
@@ -463,38 +485,38 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       nextStepsText: '২৪–৪৮ ঘণ্টাৰ ভিতৰত ইমেইল আহিব।',
       pendingVerification: 'যাচাই বাকী'
     }
-  }
+  };
 
-  const t = translations[language]
+  const t = translations[language];
 
-const navigationItems = [
-  { id: 'dashboard', name: t.dashboard, icon: Shield },
-  { id: 'tourist-search', name: t.touristSearch, icon: Search },
-  { id: 'tourist-heatmap', name: t.touristAnalytics, icon: MapPin },
-  { id: 'emergency-dispatch', name: t.emergencyDispatch, icon: Phone },
-  { id: 'fir-generator', name: t.firGenerator, icon: FileText },
-  { id: 'citizen-chat', name: t.citizenChat, icon: MessageCircle },
-  { id: 'missing-persons', name: t.missingPersons, icon: Users },
-]
+  const navigationItems = [
+    { id: 'dashboard', name: t.dashboard, icon: Shield },
+    { id: 'tourist-search', name: t.touristSearch, icon: Search },
+    { id: 'tourist-safety', name: t.touristSafety, icon: MapPin },
+    { id: 'emergency-dispatch', name: t.emergencyDispatch, icon: Phone },
+    { id: 'fir-generator', name: t.firGenerator, icon: FileText },
+    { id: 'citizen-chat', name: t.citizenChat, icon: MessageCircle },
+    { id: 'missing-persons', name: t.missingPersons, icon: Users },
+  ];
 
-const renderPage = () => {
-  switch (currentPage) {
-    case 'tourist-search':
-      return <TouristSearch profile={profile} />
-    case 'tourist-heatmap':
-      return <TouristHeatMap profile={profile} />
-    case 'emergency-dispatch':
-      return <EmergencyDispatch profile={profile} />
-    case 'fir-generator':
-      return <FIRGenerator profile={profile} />
-    case 'citizen-chat':
-      return <CitizenChat profile={profile} />
-    case 'missing-persons':
-      return <MissingPersons profile={profile} />
-    default:
-      return <DashboardHome />
-  }
-}
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'tourist-search':
+        return <TouristSearch profile={profile} />;
+      case 'tourist-safety':
+        return <TouristSafetyDashboard profile={profile} />;
+      case 'emergency-dispatch':
+        return <EmergencyDispatch profile={profile} />;
+      case 'fir-generator':
+        return <FIRGenerator profile={profile} />;
+      case 'citizen-chat':
+        return <CitizenChat profile={profile} />;
+      case 'missing-persons':
+        return <MissingPersons profile={profile} />;
+      default:
+        return <DashboardHome />;
+    }
+  };
 
   const DashboardHome = () => (
     <div className="space-y-6">
@@ -505,7 +527,7 @@ const renderPage = () => {
             <div>
               <p className="text-sm text-white/80">{t.activeCases}</p>
               {statsLoading ? (
-                <div className="animate-pulse bg-slate-200 h-6 w-12 rounded"></div>
+                <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
               ) : (
                 <p className="text-xl lg:text-2xl font-bold text-white">
                   {statsError ? '—' : dashboardStats.activeCases}
@@ -555,19 +577,19 @@ const renderPage = () => {
           <button
             onClick={refreshDashboard}
             disabled={statsLoading}
-            className="flex items-center space-x-2 px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center space-x-2 px-3 py-2 text-sm text-white/80 hover:text-blue-300 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
           {lastUpdated && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-white/60">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
         </div>
         {statsError && (
-          <div className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-lg">
+          <div className="text-sm text-red-300 bg-red-500/20 px-3 py-1 rounded-lg border border-red-400/30">
             {statsError}
           </div>
         )}
@@ -595,35 +617,35 @@ const renderPage = () => {
         </div>
       </div>
     </div>
-  )
+  );
 
   if (!isVerified) {
     return (
       <div className="min-h-screen">
         {/* Header */}
-        <header className="bg-white/85 backdrop-blur-lg shadow-sm border-b border-blue-100 sticky top-0 z-50">
+        <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center">
                 <Shield className="text-white w-5 h-5" />
               </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-800">{t.policePortal}</h1>
-              <p className="text-xs text-slate-600">{t.officerDashboard}</p>
-            </div>
+              <div>
+                <h1 className="text-lg font-bold text-white">{t.policePortal}</h1>
+                <p className="text-xs text-white/70">{t.officerDashboard}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="font-semibold text-slate-800 text-sm">{profile?.name}</p>
+                <p className="font-semibold text-white text-sm">{profile?.name}</p>
                 <div className="flex items-center justify-end">
-                  <div className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                  <div className="bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full text-xs font-medium border border-orange-400/30">
                     {t.pendingVerification}
                   </div>
                 </div>
               </div>
               <button
                 onClick={onLogout}
-                className="bg-red-50 text-red-600 p-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                className="bg-red-500/20 text-red-300 p-1.5 rounded-lg hover:bg-red-500/30 transition-colors border border-red-400/30"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -633,41 +655,41 @@ const renderPage = () => {
 
         {/* Main Content - Verification Pending */}
         <main className="max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-orange-200">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-white/20">
             <div className="text-center">
-              <div className="bg-orange-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Clock className="text-orange-600 w-10 h-10" />
+              <div className="bg-orange-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-orange-400/30">
+                <Clock className="text-orange-300 w-10 h-10" />
               </div>
-              <h1 className="text-2xl font-bold text-slate-800 mb-4">{t.accountUnderReview}</h1>
-              <p className="text-slate-600 mb-8 text-lg">
+              <h1 className="text-2xl font-bold text-white mb-4">{t.accountUnderReview}</h1>
+              <p className="text-white/80 mb-8 text-lg">
                 {t.accountReviewText}
               </p>
               
               {/* Profile Summary */}
-              <div className="bg-slate-50 rounded-lg p-6 mb-8">
-                <h3 className="font-semibold text-slate-800 mb-4">{t.registrationDetails}</h3>
+              <div className="bg-white/5 rounded-lg p-6 mb-8">
+                <h3 className="font-semibold text-white mb-4">{t.registrationDetails}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                   <div>
-                    <p className="text-sm text-slate-600">{t.name}</p>
-                    <p className="font-medium text-slate-800">{profile?.name}</p>
+                    <p className="text-sm text-white/60">{t.name}</p>
+                    <p className="font-medium text-white">{profile?.name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">{t.email}</p>
-                    <p className="font-medium text-slate-800">{profile?.email}</p>
+                    <p className="text-sm text-white/60">{t.email}</p>
+                    <p className="font-medium text-white">{profile?.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">{t.badgeNumber}</p>
-                    <p className="font-medium text-slate-800">{profile?.badge_number}</p>
+                    <p className="text-sm text-white/60">{t.badgeNumber}</p>
+                    <p className="font-medium text-white">{profile?.badge_number}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">{t.station}</p>
-                    <p className="font-medium text-slate-800">{profile?.station}</p>
+                    <p className="text-sm text-white/60">{t.station}</p>
+                    <p className="font-medium text-white">{profile?.station}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                <p className="text-blue-800 text-sm">
+              <div className="bg-blue-500/20 rounded-lg p-4 mb-6 border border-blue-400/30">
+                <p className="text-blue-200 text-sm">
                   <strong>{t.whatHappensNext}</strong><br />
                   {t.nextStepsText}
                 </p>
@@ -676,7 +698,7 @@ const renderPage = () => {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   return (
@@ -701,7 +723,7 @@ const renderPage = () => {
         {/* Sidebar Navigation */}
         <nav className="p-4 space-y-2">
           {navigationItems.map((item) => {
-            const Icon = item.icon
+            const Icon = item.icon;
             return (
               <button
                 key={item.id}
@@ -715,7 +737,7 @@ const renderPage = () => {
                 <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 <span>{item.name}</span>
               </button>
-            )
+            );
           })}
         </nav>
 
@@ -756,9 +778,9 @@ const renderPage = () => {
       {sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(false)}
-          className="fixed top-4 right-4 z-50 lg:hidden p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-slate-200"
+          className="fixed top-4 right-4 z-50 lg:hidden p-2 bg-white/10 backdrop-blur-sm rounded-full shadow-lg border border-white/20"
         >
-          <X className="w-5 h-5 text-slate-600" />
+          <X className="w-5 h-5 text-white" />
         </button>
       )}
 
@@ -836,9 +858,8 @@ const renderPage = () => {
           </div>
         </div>
       )}
-
     </div>
-  )
-}
+  );
+};
 
-export default PoliceDashboard
+export default PoliceDashboard;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { supabase, authAPI } from './utils/supabase'
+import { supabase } from './utils/supabase'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -43,7 +43,7 @@ function ProfileError({ error, onRetry, onLogout }) {
 
 // Main App Component that uses AuthContext
 function AppContent() {
-  const { user, profile, loading, profileError, login, signup, logout, retryProfileFetch } = useAuth()
+  const { user, profile, loading, error, login, signup, logout, retryProfileFetch } = useAuth()
   const [currentPage, setCurrentPage] = useState('login')
   const [pendingOfficers, setPendingOfficers] = useState([])
   const [activeOfficers, setActiveOfficers] = useState([])
@@ -54,19 +54,6 @@ function AppContent() {
       loadAllOfficers()
     }
   }, [profile])
-
-  // Set current page based on user role
-  useEffect(() => {
-    if (user && profile) {
-      if (profile.role === 'admin') {
-        setCurrentPage('admin-dashboard')
-      } else if (profile.role === 'police') {
-        setCurrentPage('police-dashboard')
-      }
-    } else {
-      setCurrentPage('login')
-    }
-  }, [user, profile])
 
   const loadAllOfficers = async () => {
     try {
@@ -91,18 +78,16 @@ function AppContent() {
   }
 
   const handleLogin = async (email, password) => {
-    try {
-      await login(email, password)
-    } catch (error) {
-      throw error
-    }
+    await login(email, password)
+    // Page navigation will be handled automatically by the auth state
   }
 
   const handleSignup = async (email, password, userData) => {
     try {
       const data = await signup(email, password, userData)
+      // After successful signup, redirect to login
       setCurrentPage('login')
-      return data  // Return the auth data so Signup.jsx can access user.id
+      return data
     } catch (error) {
       throw error
     }
@@ -116,17 +101,21 @@ function AppContent() {
   }
 
   const handleLogout = async () => {
-    try {
-      await logout()
-      setCurrentPage('login')
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
+    await logout()
+    setCurrentPage('login')
   }
 
   const handleApproveOfficer = async (officerId) => {
     try {
-      await authAPI.verifyOfficer(officerId)
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({ is_verified: true })
+        .eq('id', officerId)
+        .select()
+        .single()
+
+      if (error) throw error
+      
       await loadAllOfficers()
     } catch (error) {
       console.error('Error approving officer:', error)
@@ -135,7 +124,13 @@ function AppContent() {
 
   const handleRejectOfficer = async (officerId) => {
     try {
-      await authAPI.rejectOfficer(officerId)
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', officerId)
+
+      if (error) throw error
+      
       await loadAllOfficers()
     } catch (error) {
       console.error('Error rejecting officer:', error)
@@ -146,7 +141,7 @@ function AppContent() {
     setCurrentPage(page)
   }
 
-  // Loading state
+  // Show loading screen
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -158,18 +153,18 @@ function AppContent() {
     )
   }
 
-  // Profile error state - show error with retry option
-  if (user && !profile && profileError) {
+  // Show profile error if user exists but profile failed to load
+  if (user && !profile && error) {
     return (
       <ProfileError 
-        error={profileError}
+        error={error}
         onRetry={retryProfileFetch}
         onLogout={handleLogout}
       />
     )
   }
 
-  // If user is logged in and profile is loaded, show appropriate dashboard
+  // If user is logged in and profile is loaded, show dashboard
   if (user && profile) {
     if (profile.role === 'admin') {
       return (
@@ -193,7 +188,7 @@ function AppContent() {
     }
   }
 
-  // Auth pages - render based on current page
+  // Show appropriate auth page based on currentPage state
   switch (currentPage) {
     case 'signup':
       return (

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Shield, Lock, Mail } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Shield, Lock, Mail, AlertCircle } from 'lucide-react'
 
 const Login = ({ onLogin, onNavigate }) => {
   const [email, setEmail] = useState('')
@@ -7,26 +7,63 @@ const Login = ({ onLogin, onNavigate }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Clear error when user starts typing
+  useEffect(() => {
+    if (error && (email || password)) {
+      setError('')
+    }
+  }, [email, password])
+
+  const validateInputs = () => {
+    if (!email.trim()) {
+      setError('Please enter your email address')
+      return false
+    }
+    if (!password.trim()) {
+      setError('Please enter your password')
+      return false
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address')
+      return false
+    }
+    
+    return true
+  }
+
   const handleSubmit = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields')
+    // Clear any existing errors
+    setError('')
+    
+    // Validate inputs first
+    if (!validateInputs()) {
       return
     }
 
     setLoading(true)
-    setError('')
     
     try {
-      await onLogin(email, password)
+      await onLogin(email.trim(), password)
+      // Success - the auth context will handle navigation
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.')
+      console.error('Login failed:', err)
+      
+      // Set user-friendly error message
+      const errorMessage = err.message || 'Login failed. Please try again.'
+      setError(errorMessage)
+      
+      // Clear password field on error for security
+      setPassword('')
     } finally {
       setLoading(false)
     }
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !loading) {
       handleSubmit()
     }
   }
@@ -45,7 +82,7 @@ const Login = ({ onLogin, onNavigate }) => {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-white/90 mb-2">
-              Login ID (Email)
+              Email Address <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
@@ -57,13 +94,14 @@ const Login = ({ onLogin, onNavigate }) => {
                 className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white placeholder-white/60"
                 placeholder="Enter your email"
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-white/90 mb-2">
-              Password
+              Password <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 text-white/60 w-5 h-5" />
@@ -75,22 +113,23 @@ const Login = ({ onLogin, onNavigate }) => {
                 className="w-full pl-11 pr-4 py-3 bg-white/20 border border-white/30 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-white placeholder-white/60"
                 placeholder="Enter your password"
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
-                {error}
+            <div className="bg-red-500/20 border border-red-400/30 text-red-300 p-3 rounded-lg text-sm backdrop-blur-sm">
+              <div className="flex items-start">
+                <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
             </div>
           )}
 
           <button
             onClick={handleSubmit}
-            disabled={loading || !email || !password}
+            disabled={loading || !email.trim() || !password.trim()}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
           >
             {loading ? (
@@ -108,7 +147,7 @@ const Login = ({ onLogin, onNavigate }) => {
           <button
             onClick={() => onNavigate('forgot')}
             disabled={loading}
-            className="text-blue-300 hover:text-blue-200 text-sm font-medium hover:underline transition-colors"
+            className="text-blue-300 hover:text-blue-200 text-sm font-medium hover:underline transition-colors disabled:opacity-50"
           >
             Forgot Password?
           </button>
@@ -117,7 +156,7 @@ const Login = ({ onLogin, onNavigate }) => {
             <button
               onClick={() => onNavigate('signup')}
               disabled={loading}
-              className="text-blue-300 hover:text-blue-200 font-medium hover:underline transition-colors"
+              className="text-blue-300 hover:text-blue-200 font-medium hover:underline transition-colors disabled:opacity-50"
             >
               Register Here
             </button>

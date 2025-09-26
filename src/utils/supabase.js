@@ -143,9 +143,6 @@ export const authAPI = {
   // Sign in
   async signIn(email, password) {
     try {
-      await supabase.auth.signOut({ scope: 'local' });
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

@@ -20,6 +20,10 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     activeCases: 0,
     totalReports: 0,
     pendingTasks: 0,
+    travellers: 0,
+    police: 0,
+    firs: 0,
+    emergencies: 0,
     recentActivity: []
   });
   const [statsLoading, setStatsLoading] = useState(true);
@@ -35,8 +39,35 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       setStatsLoading(true);
       setStatsError(null);
       
+      // Fetch existing stats
       const stats = await dashboardAPI.getDashboardStats(profile.id);
-      setDashboardStats(stats);
+
+      // Fetch global counts using supabase
+      const { count: travellersCount } = await supabase
+        .from('traveller_profiles')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: policeCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'police')
+        .eq('is_verified', true);
+
+      const { count: firCount } = await supabase
+        .from('fir_reports')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: emergencyCount } = await supabase
+        .from('emergency_alerts')
+        .select('*', { count: 'exact', head: true });
+
+      setDashboardStats({
+        ...stats,
+        travellers: travellersCount || 0,
+        police: policeCount || 0,
+        firs: firCount || 0,
+        emergencies: emergencyCount || 0
+      });
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -111,7 +142,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     { code: 'assamese', name: 'Assamese', native: 'অসমীয়া' }
   ];
 
-  // Translation object (same as provided)
+  // Translation object (updated with new keys)
   const translations = {
     english: {
       dashboard: 'Dashboard',
@@ -126,6 +157,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'Active Cases',
       reportsFiled: 'Reports Filed',
       pendingTasks: 'Pending Tasks',
+      travellers: 'Total Travellers',
+      police: 'Total Police',
+      firs: 'Total FIRs',
+      emergencies: 'Total Emergencies',
+      recentActivity: 'Recent Activity',
       welcomeToPolicePortal: 'Welcome to Police Portal',
       accountVerified: 'Your account has been verified and you now have full access to all police portal features. Use the navigation menu to access case management, reports, and other tools.',
       officer: 'Officer',
@@ -157,6 +193,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'सक्रिय मामले',
       reportsFiled: 'दायर रिपोर्ट',
       pendingTasks: 'लंबित कार्य',
+      travellers: 'कुल यात्री',
+      police: 'कुल पुलिस',
+      firs: 'कुल एफआईआर',
+      emergencies: 'कुल आपातकाल',
+      recentActivity: 'हाल की गतिविधि',
       welcomeToPolicePortal: 'पुलिस पोर्टल में आपका स्वागत है',
       accountVerified: 'आपके खाते को सत्यापित कर दिया गया है और अब आपके पास पुलिस पोर्टल की सभी सुविधाओं तक पूर्ण पहुंच है। केस प्रबंधन, रिपोर्ट और अन्य उपकरणों तक पहुंचने के लिए नेविगेशन मेनू का उपयोग करें।',
       officer: 'अधिकारी',
@@ -188,6 +229,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'செயலில் உள்ள வழக்குகள்',
       reportsFiled: 'தாக்கல் செய்யப்பட்ட அறிக்கைகள்',
       pendingTasks: 'நிலுவையில் உள்ள பணிகள்',
+      travellers: 'மொத்த சுற்றுலாப்பயணிகள்',
+      police: 'மொத்த காவலர்',
+      firs: 'மொத்த எஃப்ஐஆர்கள்',
+      emergencies: 'மொத்த அவசரங்கள்',
+      recentActivity: 'சமீபத்திய செயல்பாடு',
       welcomeToPolicePortal: 'காவல் போர்டலுக்கு வரவேற்கிறோம்',
       accountVerified: 'உங்கள் கணக்கு சரிபார்க்கப்பட்டது மற்றும் இப்போது காவல் போர்டலின் அனைத்து அம்சங்களுக்கும் முழு அணுகல் உள்ளது. வழக்கு மேலாண்மை, அறிக்கைகள் மற்றும் பிற கருவிகளுக்கு அணுக நவிகேஷன் மெனுவைப் பயன்படுத்தவும்.',
       officer: 'அதிகாரி',
@@ -219,6 +265,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'સક્રિય કેસ',
       reportsFiled: 'દાખલ કરેલા અહેવાલો',
       pendingTasks: 'બાકી કાર્યો',
+      travellers: 'કુલ પ્રવાસીઓ',
+      police: 'કુલ પોલીસ',
+      firs: 'કુલ એફઆઈઆર',
+      emergencies: 'કુલ અત્યાજયક',
+      recentActivity: 'તાજેતરની પ્રવૃત્તિ',
       welcomeToPolicePortal: 'પોલીસ પોર્ટલમાં આપનું સ્વાગત છે',
       accountVerified: 'તમારા એકાઉન્ટની ચકાસણી થઈ ગઈ છે અને હવે તમારી પાસે પોલીસ પોર્ટલની બધી સુવિધાઓની સંપૂર્ણ પહોંચ છે। કેસ મેનેજમેન્ટ, અહેવાલો અને અન્ય સાધનોની પહોંચ માટે નેવિગેશન મેનુનો ઉપયોગ કરો।',
       officer: 'અધિકારી',
@@ -250,6 +301,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'সক্রিয় মামলা',
       reportsFiled: 'দায়ের করা রিপোর্ট',
       pendingTasks: 'মুলতবি কাজ',
+      travellers: 'মোট পর্যটক',
+      police: 'মোট পুলিশ',
+      firs: 'মোট এফআইআর',
+      emergencies: 'মোট জরুরি',
+      recentActivity: 'সাম্প্রতিক কার্যকলাপ',
       welcomeToPolicePortal: 'পুলিশ পোর্টালে স্বাগতম',
       accountVerified: 'আপনার অ্যাকাউন্ট যাচাই করা হয়েছে এবং এখন আপনার কাছে পুলিশ পোর্টালের সমস্ত বৈশিষ্ট্যের সম্পূর্ণ অ্যাক্সেস রয়েছে। কেস ম্যানেজমেন্ট, রিপোর্ট এবং অন্যান্য সরঞ্জামে অ্যাক্সেস করতে নেভিগেশন মেনু ব্যবহার করুন।',
       officer: 'অফিসার',
@@ -281,6 +337,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'सक्रिय प्रकरणे',
       reportsFiled: 'दाखल अहवाल',
       pendingTasks: 'प्रलंबित कामे',
+      travellers: 'एकूण पर्यटक',
+      police: 'एकूण पोलीस',
+      firs: 'एकूण एफआयआर',
+      emergencies: 'एकूण आपत्कालीन',
+      recentActivity: 'अलीकडील क्रियाकलाप',
       welcomeToPolicePortal: 'पोलीस पोर्टलवर आपले स्वागत आहे',
       accountVerified: 'तुमचे खाते पडताळले गेले आहे. सर्व वैशिष्ट्यांना पूर्ण प्रवेश आहे.',
       officer: 'अधिकारी',
@@ -312,6 +373,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'సక్రియ కేసులు',
       reportsFiled: 'నమోదైన నివేదికలు',
       pendingTasks: 'పెండింగ్ టాస్క్‌లు',
+      travellers: 'మొత్తం యాత్రికులు',
+      police: 'మొత్తం పోలీసు',
+      firs: 'మొత్తం ఎఫ్‌ఐఆర్‌లు',
+      emergencies: 'మొత్తం అత్యవసరాలు',
+      recentActivity: 'ఇటీవలి కార్యాచరణ',
       welcomeToPolicePortal: 'పోలీస్ పోర్టల్‌కు స్వాగతం',
       accountVerified: 'మీ ఖాతా ధృవీకరించబడింది మరియు ఇప్పుడు మీకు పోలీస్ పోర్టల్ యొక్క అన్ని ఫీచర్లకు పూర్తి యాక్సెస్ ఉంది.',
       officer: 'అధికారి',
@@ -343,6 +409,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'ಸಕ್ರಿಯ ಪ್ರಕರಣಗಳು',
       reportsFiled: 'ದಾಖಲಿಸಿದ ವರದಿಗಳು',
       pendingTasks: 'ಬಾಕಿ ಕೆಲಸಗಳು',
+      travellers: 'ಒಟ್ಟು ಪ್ರವಾಸಿಗಳು',
+      police: 'ಒಟ್ಟು ಪೊಲೀಸ್',
+      firs: 'ಒಟ್ಟು ಎಫ್‌ಐಆರ್‌ಗಳು',
+      emergencies: 'ಒಟ್ಟು ತುರ್ತುಗಳು',
+      recentActivity: 'ಇತ್ತೀಚಿನ ಚಟುವಟಿಕೆ',
       welcomeToPolicePortal: 'ಪೊಲೀಸ್ ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ',
       accountVerified: 'ನಿಮ್ಮ ಖಾತೆ ಪರಿಶೀಲಿಸಲಾಗಿದೆ. ಎಲ್ಲಾ ವೈಶಿಷ್ಟ್ಯಗಳಿಗೆ ಸಂಪೂರ್ಣ ಪ್ರವೇಶ.',
       officer: 'ಅಧಿಕಾರಿ',
@@ -374,6 +445,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'സജീവ കേസുകൾ',
       reportsFiled: 'ഫയൽ ചെയ്ത റിപ്പോർട്ടുകൾ',
       pendingTasks: 'ബാക്കിയുള്ള ജോലികൾ',
+      travellers: 'മൊത്തം സഞ്ചാരികൾ',
+      police: 'മൊത്തം പോലീസ്',
+      firs: 'മൊത്തം എഫ്ഐആറുകൾ',
+      emergencies: 'മൊത്തം അടിയന്തരങ്ങൾ',
+      recentActivity: 'അടുത്തിടെയുള്ള പ്രവർത്തനം',
       welcomeToPolicePortal: 'പോലീസ് പോർട്ടലിലേക്ക് സ്വാഗതം',
       accountVerified: 'നിങ്ങളുടെ അക്കൗണ്ട് സ്ഥിരീകരിച്ചു. മുഴുവൻ ആക്‌സസ് ലഭ്യമാണ്.',
       officer: 'ഓഫീസർ',
@@ -405,6 +481,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'ਸਕਰੀਆ ਕੇਸ',
       reportsFiled: 'ਦਾਖਲ ਰਿਪੋਰਟਾਂ',
       pendingTasks: 'ਬਕਾਇਆ ਕੰਮ',
+      travellers: 'ਕੁੱਲ ਸੈਲਾਨੀ',
+      police: 'ਕੁੱਲ ਪੁਲਿਸ',
+      firs: 'ਕੁੱਲ ਐੱਫਆਈਆਰ',
+      emergencies: 'ਕੁੱਲ ਐਮਰਜੈਂਸੀ',
+      recentActivity: 'ਤਾਜ਼ਾ ਗਤੀਵਿਧੀ',
       welcomeToPolicePortal: 'ਪੁਲਿਸ ਪੋਰਟਲ ਵਿੱਚ ਸਵਾਗਤ ਹੈ',
       accountVerified: 'ਤੁਹਾਡਾ ਖਾਤਾ ਪ੍ਰਮਾਣਿਤ ਹੈ। ਸਭ ਫੀਚਰਾਂ ਦੀ ਪਹੁੰਚ ਹੈ।',
       officer: 'ਅਧਿਕਾਰੀ',
@@ -436,6 +517,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'ସକ୍ରିୟ କେସ୍',
       reportsFiled: 'ଦାଖଲ ରିପୋର୍ଟ',
       pendingTasks: 'ବକେୟା କାମ',
+      travellers: 'ମୋଟ ପର୍ଯ୍ଯଟକ',
+      police: 'ମୋଟ ପୋଲିସ',
+      firs: 'ମୋଟ ଏଫ୍‌ଆଇଆର୍',
+      emergencies: 'ମୋଟ ଜରୁରୀ',
+      recentActivity: 'ସମ୍ପ୍ରତି କାର୍ଯ୍ୟକଳାପ',
       welcomeToPolicePortal: 'ପୋଲିସ ପୋର୍ଟାଲକୁ ସ୍ବାଗତ',
       accountVerified: 'ଆପଣଙ୍କର ଖାତା ଯାଞ୍ଚିତ। ସମସ୍ତ ବୈଶିଷ୍ଟ୍ୟରେ ପ୍ରବେଶ ଅଛି।',
       officer: 'ଅଫିସର୍',
@@ -467,6 +553,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
       activeCases: 'সক্রিয় কেচ',
       reportsFiled: 'দাখিল প্ৰতিবেদন',
       pendingTasks: 'বাকী কাম',
+      travellers: 'মুঠ পর্যটক',
+      police: 'মুঠ পুলিচ',
+      firs: 'মুঠ এফআইআৰ',
+      emergencies: 'মুঠ জৰুৰী',
+      recentActivity: 'শেহতীয়া কাৰ্যকলাপ',
       welcomeToPolicePortal: 'পুলিচ প’ৰ্টেলত স্বাগতম',
       accountVerified: 'আপোনাৰ একাউন্ট যাচাই কৰা হৈছে। সকলো সুবিধালৈ অভিগম আছে।',
       officer: 'অফিচাৰ',
@@ -520,9 +611,9 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
 
   const DashboardHome = () => (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
+      {/* Stats Cards - Enhanced grid for more stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white/80">{t.activeCases}</p>
@@ -534,11 +625,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
                 </p>
               )}
             </div>
-            <Shield className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+            <Shield className="text-blue-300 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white/80">{t.reportsFiled}</p>
@@ -550,11 +641,11 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
                 </p>
               )}
             </div>
-            <CheckCircle className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+            <CheckCircle className="text-green-300 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 sm:col-span-2 lg:col-span-1">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white/80">{t.pendingTasks}</p>
@@ -566,7 +657,71 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
                 </p>
               )}
             </div>
-            <AlertCircle className="text-white/80 w-6 h-6 lg:w-8 lg:h-8" />
+            <AlertCircle className="text-yellow-300 w-6 h-6 lg:w-8 lg:h-8" />
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white/80">{t.travellers}</p>
+              {statsLoading ? (
+                <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+              ) : (
+                <p className="text-xl lg:text-2xl font-bold text-white">
+                  {statsError ? '—' : dashboardStats.travellers}
+                </p>
+              )}
+            </div>
+            <Globe className="text-purple-300 w-6 h-6 lg:w-8 lg:h-8" />
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white/80">{t.police}</p>
+              {statsLoading ? (
+                <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+              ) : (
+                <p className="text-xl lg:text-2xl font-bold text-white">
+                  {statsError ? '—' : dashboardStats.police}
+                </p>
+              )}
+            </div>
+            <Shield className="text-indigo-300 w-6 h-6 lg:w-8 lg:h-8" />
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white/80">{t.firs}</p>
+              {statsLoading ? (
+                <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+              ) : (
+                <p className="text-xl lg:text-2xl font-bold text-white">
+                  {statsError ? '—' : dashboardStats.firs}
+                </p>
+              )}
+            </div>
+            <FileText className="text-teal-300 w-6 h-6 lg:w-8 lg:h-8" />
+          </div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg p-4 lg:p-6 border border-white/20 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-white/80">{t.emergencies}</p>
+              {statsLoading ? (
+                <div className="animate-pulse bg-white/20 h-6 w-12 rounded"></div>
+              ) : (
+                <p className="text-xl lg:text-2xl font-bold text-white">
+                  {statsError ? '—' : dashboardStats.emergencies}
+                </p>
+              )}
+            </div>
+            <AlertCircle className="text-red-300 w-6 h-6 lg:w-8 lg:h-8" />
           </div>
         </div>
       </div>
@@ -592,6 +747,31 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
           <div className="text-sm text-red-300 bg-red-500/20 px-3 py-1 rounded-lg border border-red-400/30">
             {statsError}
           </div>
+        )}
+      </div>
+
+      {/* Recent Activity Section */}
+      <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-lg border border-white/20 p-6 lg:p-8 max-w-4xl mx-auto w-full">
+        <h2 className="text-lg lg:text-xl font-bold text-white mb-4">{t.recentActivity}</h2>
+        {statsLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-white/20 h-12 rounded-lg"></div>
+            ))}
+          </div>
+        ) : dashboardStats.recentActivity.length > 0 ? (
+          <ul className="space-y-4">
+            {dashboardStats.recentActivity.map((activity, index) => (
+              <li key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-white font-medium">{activity.description}</span>
+                  <span className="text-white/60 text-sm">{new Date(activity.time).toLocaleString()}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-white/60 text-center">No recent activity</p>
         )}
       </div>
 
@@ -786,40 +966,41 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
 
       {/* Main Content Area */}
       <div className={`flex-1 lg:ml-64 ${showEmergencyOverlay ? 'pointer-events-none select-none' : ''}`}>
-        {/* Top Header */}
-        <header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-20">
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-white/20 transition-colors"
-              >
-                <Menu className="w-5 h-5 text-white" />
-              </button>
-              <h2 className="text-lg font-semibold text-white">{t.welcomeToPolicePortal}</h2>
-            </div>
-            <div className="hidden sm:flex items-center space-x-4 text-sm text-white/80">
-              <span>{now.toLocaleDateString()}</span>
-              <span>•</span>
-              <span>{now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-              {/* Language Selector */}
-              <div className="relative">
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="bg-white/20 border border-white/30 rounded-lg px-2 py-1 text-xs font-medium text-white hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none pr-8"
-                >
-                  {languageOptions.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.native}
-                    </option>
-                  ))}
-                </select>
-                <Globe className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-        </header>
+   {/* Top Header */}
+<header className="bg-white/10 backdrop-blur-xl shadow-sm border-b border-white/20 sticky top-0 z-50">
+  <div className="px-4 py-3 flex items-center justify-between">
+    <div className="flex items-center space-x-3">
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden p-2 rounded-lg hover:bg-white/20 transition-colors"
+      >
+        <Menu className="w-5 h-5 text-white" />
+      </button>
+      <h2 className="text-lg font-semibold text-white">{t.welcomeToPolicePortal}</h2>
+    </div>
+    <div className="flex items-center space-x-4 text-sm text-white/80">
+      <span>{now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+      <span>•</span>
+      <span>{now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true, hour: '2-digit', minute: '2-digit' })}</span>
+      {/* Language Selector - Enhanced visibility and styling */}
+      <div className="relative">
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-xs font-medium text-white hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none pr-8 w-28 z-10"
+          style={{ appearance: 'auto' }} // Force native dropdown behavior
+        >
+          {languageOptions.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.native}
+            </option>
+          ))}
+        </select>
+        <Globe className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-white/60 pointer-events-none z-10" />
+      </div>
+    </div>
+  </div>
+</header>
 
         {/* Main Content */}
         <main className={`p-4 lg:p-6 ${showEmergencyOverlay ? 'blur-sm' : ''}`}>

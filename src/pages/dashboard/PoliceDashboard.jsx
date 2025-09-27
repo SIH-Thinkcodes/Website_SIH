@@ -991,7 +991,7 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
           style={{ appearance: 'auto' }} // Force native dropdown behavior
         >
           {languageOptions.map((option) => (
-            <option key={option.code} value={option.code}>
+            <option key={option.code} value={option.code} className="bg-gray-800 text-white">
               {option.native}
             </option>
           ))}

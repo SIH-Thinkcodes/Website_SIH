@@ -587,7 +587,6 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
     { id: 'emergency-dispatch', name: t.emergencyDispatch, icon: Phone },
     { id: 'fir-generator', name: t.firGenerator, icon: FileText },
     { id: 'citizen-chat', name: t.citizenChat, icon: MessageCircle },
-    { id: 'missing-persons', name: t.missingPersons, icon: Users },
   ];
 
   const renderPage = () => {
@@ -602,8 +601,6 @@ const PoliceDashboard = ({ profile, onLogout, isVerified }) => {
         return <FIRGenerator profile={profile} />;
       case 'citizen-chat':
         return <CitizenChat profile={profile} />;
-      case 'missing-persons':
-        return <MissingPersons profile={profile} />;
       default:
         return <DashboardHome />;
     }

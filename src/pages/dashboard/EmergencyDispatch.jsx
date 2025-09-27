@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../utils/supabase';
 import { 
   Phone, MapPin, Clock, AlertTriangle, User, CheckCircle, 
   UserCheck, MessageSquare, Users, ArrowUp, RefreshCw, 
@@ -6,50 +7,6 @@ import {
   Shield, Badge, Activity, Bell, Eye, Map, AlertCircle,
   Calendar, Star, Navigation
 } from 'lucide-react';
-
-// Mock supabase for demo
-const mockSupabase = {
-  from: () => ({
-    select: () => ({
-      order: () => Promise.resolve({ 
-        data: [
-          {
-            id: '1',
-            tourist_id: 'TID002',
-            tourist_name: 'Chirag Khairnar',
-            tourist_phone: '9130841341',
-            tourist_nationality: 'Indian',
-            alert_type: 'SOS',
-            priority_level: 'Critical',
-            location_lat: 12.82205700,
-            location_lng: 80.04368510,
-            location_address: 'Current Location',
-            alert_message: 'Emergency assistance needed',
-            status: 'Acknowledged',
-            created_at: '2025-09-16T16:01:18Z',
-            acknowledged_at: '2025-09-16T16:01:32Z',
-            current_handling_officer_name: 'Police Singham',
-            emergency_contacts: JSON.stringify([
-              { name: 'Rajesh Khairnar', relation: 'Father', phone: '+91-9876543210' },
-              { name: 'Priya Khairnar', relation: 'Mother', phone: '+91-9876543211' }
-            ]),
-            response_actions: [
-              { action: 'Status Changed to Acknowledged', officer_name: 'Police Singham', timestamp: '2025-09-16T16:01:32Z' }
-            ]
-          }
-        ], 
-        error: null 
-      })
-    }),
-    update: () => ({
-      eq: () => Promise.resolve({ error: null })
-    })
-  }),
-  channel: () => ({
-    on: () => ({ subscribe: () => {} })
-  }),
-  removeChannel: () => {}
-};
 
 // Translations
 const translations = {
@@ -147,6 +104,7 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [alertProfiles, setAlertProfiles] = useState({});
 
   const t = translations[language] || translations.en;
 
@@ -164,8 +122,44 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
     { value: 'Low', label: 'Low', description: 'Non-urgent situation, routine response', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200' }
   ];
 
+  // Fetch profile function
+  const fetchProfile = async (touristPhone) => {
+    try {
+      const { data, error } = await supabase
+        .from('traveller_profiles')
+        .select('*')
+        .eq('phone', touristPhone);
+      if (error) throw error;
+      if (data.length > 1) {
+        console.warn('Multiple profiles found for phone:', touristPhone, 'Using the first one.');
+      }
+      return data.length > 0 ? data[0] : null;
+    } catch (error) {
+      console.error('Error fetching traveller profile:', error);
+      return null;
+    }
+  };
+
+  // Fetch profile when selectedAlert changes
+  useEffect(() => {
+    if (selectedAlert && !alertProfiles[selectedAlert.id]) {
+      fetchProfile(selectedAlert.tourist_phone).then((profileData) => {
+        if (profileData) {
+          setAlertProfiles((prev) => ({ ...prev, [selectedAlert.id]: profileData }));
+        }
+      });
+    }
+  }, [selectedAlert]);
+
   // Reverse geocoding function
   const reverseGeocode = async (lat, lng) => {
+    // Quick sanity check: If coords look like they're in the US (high lat, negative lng), and context suggests India...
+    // (You could enhance this with tourist_nationality or alert_type checks)
+    if (lat > 30 || (lng < -70 && lng > -125)) {  // Rough US bounds (tweak as needed)
+      console.warn('Suspicious US-like coords detected—flagging for manual review');
+      return '⚠️ Coordinates suggest US location (possible GPS error). Expected: India/Chennai area. Lat/Lng: ' + lat + ', ' + lng;
+    }
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
@@ -181,10 +175,15 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
         return data.display_name;
       }
       
+      // Fallback for Chennai if coords are invalid/null
+      if (!lat || !lng || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        return 'Chennai, Tamil Nadu, India (Fallback - Invalid GPS data)';
+      }
+      
       return `${lat}, ${lng}`;
     } catch (error) {
       console.error('Reverse geocoding error:', error);
-      return `${lat}, ${lng}`;
+      return 'Chennai, Tamil Nadu, India (Geocoding failed - using default)';
     }
   };
 
@@ -246,8 +245,15 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
     setTimeout(() => setNotification(null), 4000);
   };
 
+  // Real-time data loading and subscription
   useEffect(() => {
     loadAlerts();
+    setupRealtimeSubscription();
+
+    return () => {
+      // Cleanup subscription on unmount
+      supabase.removeAllChannels();
+    };
   }, []);
 
   useEffect(() => {
@@ -256,12 +262,16 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
 
   const loadAlerts = async () => {
     try {
-      const { data, error } = await mockSupabase
+      setLoading(true);
+      const { data, error } = await supabase
         .from('emergency_alerts')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading alerts:', error);
+        throw error;
+      }
       
       // Process location data for each alert
       const processedAlerts = await Promise.all(
@@ -269,12 +279,67 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
       );
       
       setAlerts(processedAlerts);
+      
+      // Show popup for new critical alerts
+      const newCriticalAlerts = processedAlerts.filter(
+        alert => alert.status === 'New' && alert.priority_level === 'Critical'
+      );
+      
+      if (newCriticalAlerts.length > 0 && !emergencyPopup) {
+        setEmergencyPopup(newCriticalAlerts[0]);
+        setPopupVisible(true);
+      }
+      
     } catch (error) {
       console.error('Error loading alerts:', error.message);
-      showNotification('Error loading alerts', 'error');
+      showNotification('Error loading alerts: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const setupRealtimeSubscription = () => {
+    // Subscribe to real-time changes in emergency_alerts table
+    const subscription = supabase
+      .channel('emergency_alerts_channel')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'emergency_alerts'
+      }, async (payload) => {
+        console.log('Real-time update:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          // New alert created
+          const newAlert = await processLocationData(payload.new);
+          setAlerts(prevAlerts => [newAlert, ...prevAlerts]);
+          
+          // Show emergency popup for critical new alerts
+          if (payload.new.status === 'New' && payload.new.priority_level === 'Critical') {
+            setEmergencyPopup(newAlert);
+            setPopupVisible(true);
+            showNotification('🚨 NEW CRITICAL EMERGENCY ALERT', 'error');
+          } else {
+            showNotification(`New ${payload.new.priority_level} alert received`, 'info');
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          // Alert updated
+          const updatedAlert = await processLocationData(payload.new);
+          setAlerts(prevAlerts => 
+            prevAlerts.map(alert => 
+              alert.id === payload.new.id ? updatedAlert : alert
+            )
+          );
+        } else if (payload.eventType === 'DELETE') {
+          // Alert deleted
+          setAlerts(prevAlerts => 
+            prevAlerts.filter(alert => alert.id !== payload.old.id)
+          );
+        }
+      })
+      .subscribe();
+
+    return subscription;
   };
 
   const applyFilters = () => {
@@ -309,18 +374,163 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
     return actionLoading[`${alertId}-${action}`] || false;
   };
 
-  // Mock action functions
-  const updateAlertStatus = async (alertId, newStatus) => {
+  // Real database action functions
+  const updateAlertStatus = async (alertId, newStatus, officerName = null) => {
     setLoadingState(alertId, 'acknowledge', true);
-    setTimeout(() => {
-      setLoadingState(alertId, 'acknowledge', false);
+    try {
+      const updateData = {
+        status: newStatus,
+        acknowledged_at: newStatus === 'Acknowledged' ? new Date().toISOString() : null,
+        resolved_at: newStatus === 'Resolved' ? new Date().toISOString() : null,
+        last_action_timestamp: new Date().toISOString(),
+      };
+
+      if (officerName) {
+        updateData.current_handling_officer_name = officerName;
+        updateData.last_action_by_officer_name = officerName;
+      }
+
+      // Add to response actions
+      const alert = alerts.find(a => a.id === alertId);
+      const currentActions = alert?.response_actions || [];
+      const newAction = {
+        action: `Status Changed to ${newStatus}`,
+        officer_name: officerName || profile.name,
+        timestamp: new Date().toISOString()
+      };
+      
+      updateData.response_actions = JSON.stringify([...currentActions, newAction]);
+
+      const { error } = await supabase
+        .from('emergency_alerts')
+        .update(updateData)
+        .eq('id', alertId);
+
+      if (error) throw error;
+
       showNotification(t.statusUpdated, 'success');
-    }, 1000);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      showNotification('Error updating status: ' + error.message, 'error');
+    } finally {
+      setLoadingState(alertId, 'acknowledge', false);
+    }
   };
 
-  const callTourist = (phone) => {
+  const assignUnit = async (alertId, unitName) => {
+    try {
+      const alert = alerts.find(a => a.id === alertId);
+      const currentActions = alert?.response_actions || [];
+      const newAction = {
+        action: `Unit Assigned: ${unitName}`,
+        officer_name: profile.name,
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('emergency_alerts')
+        .update({
+          assigned_unit_name: unitName,
+          status: 'Assigned',
+          current_handling_officer_name: profile.name,
+          last_action_by_officer_name: profile.name,
+          last_action_timestamp: new Date().toISOString(),
+          response_actions: JSON.stringify([...currentActions, newAction])
+        })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      showNotification(t.unitAssigned, 'success');
+      setShowAssignModal(false);
+      setSelectedUnit('');
+    } catch (error) {
+      console.error('Error assigning unit:', error);
+      showNotification('Error assigning unit: ' + error.message, 'error');
+    }
+  };
+
+  const updatePriority = async (alertId, newPriority) => {
+    try {
+      const alert = alerts.find(a => a.id === alertId);
+      const currentActions = alert?.response_actions || [];
+      const newAction = {
+        action: `Priority Changed to ${newPriority}`,
+        officer_name: profile.name,
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('emergency_alerts')
+        .update({
+          priority_level: newPriority,
+          last_action_by_officer_name: profile.name,
+          last_action_timestamp: new Date().toISOString(),
+          response_actions: JSON.stringify([...currentActions, newAction])
+        })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      showNotification(t.priorityChanged, 'success');
+      setShowPriorityModal(false);
+      setSelectedPriority('');
+    } catch (error) {
+      console.error('Error updating priority:', error);
+      showNotification('Error updating priority: ' + error.message, 'error');
+    }
+  };
+
+  const addResponseAction = async (alertId, action) => {
+    try {
+      const alert = alerts.find(a => a.id === alertId);
+      const currentActions = alert?.response_actions || [];
+      const newAction = {
+        action: action,
+        officer_name: profile.name,
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('emergency_alerts')
+        .update({
+          last_action_by_officer_name: profile.name,
+          last_action_timestamp: new Date().toISOString(),
+          response_actions: JSON.stringify([...currentActions, newAction])
+        })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      return true;
+    } catch (error) {
+      console.error('Error adding response action:', error);
+      return false;
+    }
+  };
+
+  const callTourist = async (phone, alertId) => {
     window.open(`tel:${phone}`);
     showNotification(`Calling ${phone}`, 'success');
+    await addResponseAction(alertId, `Called tourist at ${phone}`);
+  };
+
+  const sendMessage = async (alertId, message) => {
+    const success = await addResponseAction(alertId, `Sent message: "${message}"`);
+    if (success) {
+      showNotification(t.messageSent, 'success');
+    } else {
+      showNotification('Error sending message', 'error');
+    }
+  };
+
+  const contactEmergencyContacts = async (alertId) => {
+    const success = await addResponseAction(alertId, 'Contacted emergency contacts');
+    if (success) {
+      showNotification(t.familyContacted, 'success');
+    } else {
+      showNotification('Error contacting family', 'error');
+    }
   };
 
   if (loading) {
@@ -336,6 +546,46 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+      {/* Emergency Popup */}
+      {emergencyPopup && popupVisible && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-red-600/95 backdrop-blur-xl rounded-2xl p-8 w-full max-w-md shadow-2xl border border-red-400/50 animate-pulse">
+            <div className="text-center">
+              <AlertTriangle className="w-16 h-16 text-white mx-auto mb-4 animate-bounce" />
+              <h2 className="text-2xl font-bold text-white mb-4">{t.emergencyAlert}</h2>
+              <p className="text-lg text-red-100 mb-2">{t.newEmergencyReceived}</p>
+              <div className="bg-white/20 rounded-lg p-4 mb-6 text-left">
+                <p className="text-white font-semibold text-lg">{emergencyPopup.tourist_name}</p>
+                <p className="text-red-100 text-sm">{emergencyPopup.tourist_id}</p>
+                <p className="text-red-100 text-sm mt-2">{emergencyPopup.alert_message}</p>
+              </div>
+              <p className="text-red-100 text-sm mb-6">{t.acknowledgeToClose}</p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    updateAlertStatus(emergencyPopup.id, 'Acknowledged', profile.name);
+                    setPopupVisible(false);
+                    setEmergencyPopup(null);
+                  }}
+                  className="flex-1 bg-white text-red-600 py-3 px-4 rounded-xl hover:bg-red-50 font-bold transition-colors"
+                >
+                  {t.acknowledge}
+                </button>
+                <button
+                  onClick={() => {
+                    setPopupVisible(false);
+                    setEmergencyPopup(null);
+                  }}
+                  className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl flex items-center space-x-3 backdrop-blur-md border ${
@@ -529,7 +779,7 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   {alert.status === 'New' && (
                     <button
-                      onClick={() => updateAlertStatus(alert.id, 'Acknowledged')}
+                      onClick={() => updateAlertStatus(alert.id, 'Acknowledged', profile.name)}
                       disabled={isActionLoading(alert.id, 'acknowledge')}
                       className="bg-yellow-600 text-white px-4 py-2.5 rounded-lg hover:bg-yellow-700 disabled:bg-gray-500 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
                     >
@@ -567,7 +817,7 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                     Message
                   </button>
                   <button
-                    onClick={() => callTourist(alert.tourist_phone)}
+                    onClick={() => callTourist(alert.tourist_phone, alert.id)}
                     className="bg-purple-600 text-white px-4 py-2.5 rounded-lg hover:bg-purple-700 flex items-center justify-center text-sm font-medium transition-all duration-200 shadow-lg"
                   >
                     <PhoneCall className="w-4 h-4 mr-2" />
@@ -596,33 +846,49 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                 </div>
 
                 {/* Recent Actions */}
-                {alert.response_actions && alert.response_actions.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-sm font-medium text-white/80 mb-3 flex items-center">
-                      <Activity className="w-4 h-4 mr-2 text-blue-400" />
-                      Recent Actions
-                    </p>
-                    <div className="space-y-2">
-                      {alert.response_actions.slice(-2).map((action, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm bg-white/5 backdrop-blur-sm p-3 rounded-lg border border-white/10">
-                          <div className="flex items-center">
-                            <Check className="w-4 h-4 mr-2 text-green-400" />
-                            <span className="text-white">{action.action}</span>
+                {(() => {
+                  let actions = [];
+                  try {
+                    if (alert.response_actions) {
+                      if (typeof alert.response_actions === 'string') {
+                        actions = JSON.parse(alert.response_actions);
+                      } else if (Array.isArray(alert.response_actions)) {
+                        actions = alert.response_actions;
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error parsing response_actions:', error);
+                    actions = [];
+                  }
+                  
+                  return actions.length > 0 ? (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-sm font-medium text-white/80 mb-3 flex items-center">
+                        <Activity className="w-4 h-4 mr-2 text-blue-400" />
+                        Recent Actions
+                      </p>
+                      <div className="space-y-2">
+                        {actions.slice(-2).map((action, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm bg-white/5 backdrop-blur-sm p-3 rounded-lg border border-white/10">
+                            <div className="flex items-center">
+                              <Check className="w-4 h-4 mr-2 text-green-400" />
+                              <span className="text-white">{action.action}</span>
+                            </div>
+                            <div className="flex items-center space-x-3 text-xs text-white/60">
+                              {action.officer_name && (
+                                <span className="flex items-center bg-white/10 px-2 py-1 rounded-full">
+                                  <Badge className="w-3 h-3 mr-1" />
+                                  {action.officer_name}
+                                </span>
+                              )}
+                              <span>{formatTime(action.timestamp)}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-3 text-xs text-white/60">
-                            {action.officer_name && (
-                              <span className="flex items-center bg-white/10 px-2 py-1 rounded-full">
-                                <Badge className="w-3 h-3 mr-1" />
-                                {action.officer_name}
-                              </span>
-                            )}
-                            <span>{formatTime(action.timestamp)}</span>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </div>
             </div>
           ))}
@@ -657,24 +923,17 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
 
                 {(() => {
                   let contacts = [];
-                  
-                  try {
-                    if (selectedAlert?.emergency_contacts) {
-                      if (Array.isArray(selectedAlert.emergency_contacts)) {
-                        contacts = selectedAlert.emergency_contacts;
-                      } else if (typeof selectedAlert.emergency_contacts === 'string') {
-                        contacts = JSON.parse(selectedAlert.emergency_contacts);
-                        if (!Array.isArray(contacts)) {
-                          contacts = [];
-                        }
-                      }
-                    }
-                  } catch (error) {
-                    console.error('Contact processing error:', error);
-                    contacts = [];
+                  const profileData = alertProfiles[selectedAlert?.id];
+
+                  if (profileData && profileData.emergency_contact_name && profileData.emergency_contact_number) {
+                    contacts = [{
+                      name: profileData.emergency_contact_name,
+                      relation: 'Primary Emergency Contact',
+                      phone: profileData.emergency_contact_number
+                    }];
                   }
 
-                  return contacts && contacts.length > 0 ? (
+                  return contacts.length > 0 ? (
                     <div className="space-y-4">
                       <p className="text-sm font-medium text-white/80 mb-4">
                         Emergency Contacts ({contacts.length}):
@@ -687,14 +946,14 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                                 {contact.name || 'Unknown Name'}
                               </p>
                               <p className="text-white/70 text-sm mb-2">
-                                {contact.relation || contact.relationship || 'Unknown Relation'}
+                                {contact.relation || 'Unknown Relation'}
                               </p>
                               <p className="text-blue-300 font-mono text-sm">
-                                {contact.phone || contact.phone_number || 'No Phone'}
+                                {contact.phone || 'No Phone'}
                               </p>
                             </div>
                             <button
-                              onClick={() => callTourist(contact.phone || contact.phone_number)}
+                              onClick={() => callTourist(contact.phone, selectedAlert?.id)}
                               className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-colors"
                             >
                               <Phone className="w-4 h-4" />
@@ -717,10 +976,19 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
 
               <div className="flex space-x-3">
                 <button
+                  onClick={() => {
+                    contactEmergencyContacts(selectedAlert?.id);
+                    setShowContactModal(false);
+                  }}
+                  className="flex-1 bg-red-600 text-white py-3 px-4 rounded-xl hover:bg-red-700 font-medium transition-colors"
+                >
+                  {t.contact}
+                </button>
+                <button
                   onClick={() => setShowContactModal(false)}
                   className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
-                  Close
+                  {t.close}
                 </button>
               </div>
             </div>
@@ -758,11 +1026,7 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
               
               <div className="flex space-x-3">
                 <button
-                  onClick={() => {
-                    setShowAssignModal(false);
-                    setSelectedUnit('');
-                    showNotification('Unit assigned successfully', 'success');
-                  }}
+                  onClick={() => assignUnit(selectedAlert?.id, selectedUnit)}
                   disabled={!selectedUnit}
                   className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 disabled:bg-gray-500 font-medium transition-colors"
                 >
@@ -804,8 +1068,8 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                     <button
                       key={key}
                       onClick={() => {
+                        sendMessage(selectedAlert?.id, message);
                         setShowMessageModal(false);
-                        showNotification(`Message sent to ${selectedAlert?.tourist_phone}`, 'success');
                       }}
                       className="w-full text-left p-4 bg-white/5 border border-white/20 rounded-xl hover:bg-white/10 text-sm transition-colors text-white leading-relaxed"
                     >
@@ -819,8 +1083,70 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                 onClick={() => setShowMessageModal(false)}
                 className="w-full bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
               >
-                Close
+                {t.close}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Priority Change Modal */}
+        {showPriorityModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 w-full max-w-md shadow-2xl border border-white/20">
+              <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                <AlertTriangle className="w-6 h-6 mr-3 text-orange-400" />
+                {t.changePriority}
+              </h3>
+              
+              <div className="mb-6">
+                <div className="bg-orange-500/20 border border-orange-400/30 p-4 rounded-xl mb-6">
+                  <p className="text-orange-300 text-sm mb-1">Alert:</p>
+                  <p className="font-semibold text-white text-lg">{selectedAlert?.tourist_name}</p>
+                  <p className="text-orange-300 text-sm">Current: {selectedAlert?.priority_level}</p>
+                </div>
+                
+                <label className="block text-sm font-medium text-white/80 mb-3">{t.selectPriority}:</label>
+                <div className="space-y-3">
+                  {priorityLevels.map((level) => (
+                    <button
+                      key={level.value}
+                      onClick={() => setSelectedPriority(level.value)}
+                      className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
+                        selectedPriority === level.value 
+                          ? 'bg-white/20 border-white/40 ring-2 ring-blue-400/50' 
+                          : 'bg-white/5 border-white/20 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className={`font-bold ${level.color}`}>{level.label}</span>
+                          <p className="text-white/70 text-sm mt-1">{level.description}</p>
+                        </div>
+                        {selectedPriority === level.value && <Check className="w-5 h-5 text-blue-400" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => updatePriority(selectedAlert?.id, selectedPriority)}
+                  disabled={!selectedPriority}
+                  className="flex-1 bg-orange-600 text-white py-3 px-4 rounded-xl hover:bg-orange-700 disabled:bg-gray-500 font-medium transition-colors"
+                >
+                  Update Priority
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPriorityModal(false);
+                    setSelectedPriority('');
+                  }}
+                  className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -852,12 +1178,56 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                         <p className="text-white font-semibold">{selectedAlert.tourist_id}</p>
                       </div>
                       <div>
+                        <p className="text-white/70">Digital ID:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.digital_id || 'N/A'}</p>
+                      </div>
+                      <div>
                         <p className="text-white/70">Phone:</p>
                         <p className="text-white font-semibold">{selectedAlert.tourist_phone}</p>
                       </div>
                       <div>
                         <p className="text-white/70">Nationality:</p>
                         <p className="text-white font-semibold">{selectedAlert.tourist_nationality}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Document Information */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <User className="w-5 h-5 mr-2 text-purple-400" />
+                      Document Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-white/70">Type:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.document_type || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">Number:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.document_number || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Travel Information */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <Navigation className="w-5 h-5 mr-2 text-yellow-400" />
+                      Travel Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-white/70">Destination:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.destination || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">Start Date:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.travel_start_date || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/70">End Date:</p>
+                        <p className="text-white font-semibold">{alertProfiles[selectedAlert.id]?.travel_end_date || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -926,15 +1296,69 @@ const EmergencyDispatch = ({ profile = { id: '1', name: 'Demo Officer' } }) => {
                       )}
                     </div>
                   </div>
+
+                  {/* Response Actions History */}
+                  {(() => {
+                    let actions = [];
+                    try {
+                      if (selectedAlert.response_actions) {
+                        if (typeof selectedAlert.response_actions === 'string') {
+                          actions = JSON.parse(selectedAlert.response_actions);
+                        } else if (Array.isArray(selectedAlert.response_actions)) {
+                          actions = selectedAlert.response_actions;
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Error parsing response_actions in details:', error);
+                      actions = [];
+                    }
+                    
+                    return actions.length > 0 ? (
+                      <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                        <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                          <Activity className="w-5 h-5 mr-2 text-purple-400" />
+                          Response History
+                        </h4>
+                        <div className="space-y-3">
+                          {actions.map((action, index) => (
+                            <div key={index} className="flex items-center justify-between text-sm bg-white/5 backdrop-blur-sm p-3 rounded-lg border border-white/10">
+                              <div className="flex items-center">
+                                <Check className="w-4 h-4 mr-2 text-green-400" />
+                                <span className="text-white">{action.action}</span>
+                              </div>
+                              <div className="flex items-center space-x-3 text-xs text-white/60">
+                                {action.officer_name && (
+                                  <span className="flex items-center bg-white/10 px-2 py-1 rounded-full">
+                                    <Badge className="w-3 h-3 mr-1" />
+                                    {action.officer_name}
+                                  </span>
+                                )}
+                                <span>{formatTime(action.timestamp)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-              )}
+              )} 
               
-              <div className="mt-6">
+              <div className="mt-6 flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPriorityModal(true);
+                  }}
+                  className="bg-orange-600 text-white py-3 px-4 rounded-xl hover:bg-orange-700 font-medium transition-colors flex items-center"
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Change Priority
+                </button>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="w-full bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
+                  className="flex-1 bg-white/20 text-white py-3 px-4 rounded-xl hover:bg-white/30 font-medium transition-colors border border-white/30"
                 >
-                  Close
+                  {t.close}
                 </button>
               </div>
             </div>
